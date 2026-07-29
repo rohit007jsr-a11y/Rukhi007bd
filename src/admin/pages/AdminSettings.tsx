@@ -38,13 +38,6 @@ export const AdminSettings: React.FC = () => {
         Store Settings
       </h1>
 
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 border-2 border-green-600 text-green-900 font-bold flex items-center gap-2 shadow-[4px_4px_0px_#16a34a]">
-          <Check size={20} />
-          SETTINGS SAVED SUCCESSFULLY!
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Section 1: Store Information */}
         <div className="bg-white border-2 border-rukhi-black p-6 shadow-[6px_6px_0px_#111111] space-y-4">
@@ -162,11 +155,16 @@ export const AdminSettings: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex flex-col sm:flex-row justify-end items-end sm:items-center gap-4 pt-4 pb-12">
+          {success && (
+            <div className="p-4 bg-green-50 border-2 border-green-600 text-green-900 font-bold flex items-center gap-2 shadow-[4px_4px_0px_#16a34a] animate-pulse">
+              <Check size={20} />
+              SAVED SUCCESSFULLY!
+            </div>
+          )}
           <button
-            type="button"
-            onClick={handleSubmit}
-            className="flex items-center gap-2 bg-rukhi-black text-white px-8 py-4 font-bold uppercase hover:bg-rukhi-accent transition-colors shadow-[6px_6px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer"
+            type="submit"
+            className="flex items-center gap-2 bg-rukhi-black text-white px-8 py-4 font-bold uppercase hover:bg-rukhi-accent transition-colors shadow-[6px_6px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer z-10 relative"
           >
             <Save size={20} /> Save Configuration
           </button>
