@@ -109,6 +109,22 @@ export default function StoreApp() {
       }
     }
     loadDynamicData();
+
+    // Subscribe to real-time changes on the products table so storefront updates live
+    const productsChannel = supabase
+      .channel('storefront_products_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          loadDynamicData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(productsChannel);
+    };
   }, []);
 
   // Supabase Auth Listener
