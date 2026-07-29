@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Eye, ShoppingBag, CheckCircle2 } from 'lucide-react';
 import { Language, Product } from '../types';
 import { translations } from '../translations';
-import { products } from '../data/products';
 
 interface BestSellersProps {
   lang: Language;
+  products: Product[];
   selectedCategory: string;
   onSelectCategoryFilter: (category: string) => void;
   onAddToCart: (product: Product, size?: string) => void;
@@ -14,6 +14,7 @@ interface BestSellersProps {
 
 export const BestSellers: React.FC<BestSellersProps> = ({
   lang,
+  products,
   selectedCategory,
   onSelectCategoryFilter,
   onAddToCart,

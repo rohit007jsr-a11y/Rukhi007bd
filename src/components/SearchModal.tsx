@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { X, Search, ShoppingBag } from 'lucide-react';
 import { Language, Product } from '../types';
 import { translations } from '../translations';
-import { products } from '../data/products';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   lang: Language;
+  products: Product[];
   onSelectProduct: (product: Product) => void;
 }
 
@@ -15,6 +15,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   isOpen,
   onClose,
   lang,
+  products,
   onSelectProduct,
 }) => {
   if (!isOpen) return null;

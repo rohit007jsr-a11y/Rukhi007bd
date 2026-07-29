@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Save, Shield, HelpCircle, Check, HelpCircle as HelpIcon } from 'lucide-react';
+import { supabase } from '../../utils/supabase';
 
 export const AdminSettings: React.FC = () => {
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     storeName: 'Rukhi Bangladesh',
     contactPhone: '+8801712345678',
@@ -15,22 +18,71 @@ export const AdminSettings: React.FC = () => {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem('rukhi_admin_settings');
-    if (saved) {
+    const fetchSettings = async () => {
       try {
-        setFormData(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse settings');
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, description')
+          .eq('name', 'SYSTEM_SETTINGS')
+          .single();
+
+        if (data && data.description) {
+          const parsed = JSON.parse(data.description);
+          setFormData(prev => ({ ...prev, ...parsed }));
+        }
+      } catch (err) {
+        console.error('No remote settings found, using defaults.');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+    fetchSettings();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('rukhi_admin_settings', JSON.stringify(formData));
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
+    setSaving(true);
+    try {
+      const payload = JSON.stringify(formData);
+      
+      const { data: existing } = await supabase
+        .from('products')
+        .select('id')
+        .eq('name', 'SYSTEM_SETTINGS')
+        .single();
+        
+      if (existing) {
+        await supabase
+          .from('products')
+          .update({ description: payload })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('products')
+          .insert([{
+            name: 'SYSTEM_SETTINGS',
+            category: 'system',
+            price: 0,
+            image_url: '',
+            description: payload,
+            is_featured: false
+          }]);
+      }
+      
+      localStorage.setItem('rukhi_admin_settings', payload);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      alert('Failed to save settings to database. They have been saved locally.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return <div className="p-8 text-center font-bold">LOADING SETTINGS...</div>;
+  }
 
   return (
     <div className="max-w-4xl">
@@ -164,9 +216,10 @@ export const AdminSettings: React.FC = () => {
           )}
           <button
             type="submit"
-            className="flex items-center gap-2 bg-rukhi-black text-white px-8 py-4 font-bold uppercase hover:bg-rukhi-accent transition-colors shadow-[6px_6px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer z-10 relative"
+            disabled={saving}
+            className={`flex items-center gap-2 bg-rukhi-black text-white px-8 py-4 font-bold uppercase transition-colors shadow-[6px_6px_0px_#E63946] z-10 relative ${saving ? 'opacity-75 cursor-not-allowed' : 'hover:bg-rukhi-accent hover:shadow-[2px_2px_0px_#111111] hover:translate-x-1 hover:translate-y-1 cursor-pointer'}`}
           >
-            <Save size={20} /> Save Configuration
+            <Save size={20} /> {saving ? 'SAVING...' : 'SAVE CONFIGURATION'}
           </button>
         </div>
       </form>

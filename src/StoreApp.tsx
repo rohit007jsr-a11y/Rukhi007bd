@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Language, CartItem, Product, LookbookPost } from './types';
-import { products } from './data/products';
+import { products as localProducts } from './data/products';
 import { supabase } from './utils/supabase';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -26,6 +26,10 @@ import { WhatsAppButton } from './components/WhatsAppButton';
 export default function StoreApp() {
   // Language State - default 'en'
   const [lang, setLang] = useState<Language>('en');
+  
+  // Dynamic Products and Settings
+  const [products, setProducts] = useState<Product[]>(localProducts);
+  const [storeSettings, setStoreSettings] = useState<any>({});
 
   // User Auth State
   const [currentUser, setCurrentUser] = useState<{ email: string; name?: string; phone?: string; address?: string } | null>(null);
@@ -34,13 +38,78 @@ export default function StoreApp() {
   const [pendingOrderCallback, setPendingOrderCallback] = useState<(() => void) | null>(null);
 
   // Seed cart initialized with 2 items so cart badge starts at 2 as requested in prompt!
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { product: products[0], size: 'L', quantity: 1 },
-    { product: products[1], size: '32', quantity: 1 },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   // Selected category filter
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Load products and settings from Supabase
+  useEffect(() => {
+    async function loadDynamicData() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .neq('status', 'deleted');
+
+        if (!error && data && data.length > 0) {
+          const settingsProduct = data.find(p => p.name === 'SYSTEM_SETTINGS');
+          if (settingsProduct && settingsProduct.description) {
+            try {
+              setStoreSettings(JSON.parse(settingsProduct.description));
+            } catch(e) {}
+          }
+          
+          const dbProducts = data.filter(p => p.name !== 'SYSTEM_SETTINGS').map((p: any) => ({
+            id: p.id.toString(),
+            nameEn: p.nameEn ?? p.name ?? '',
+            nameBn: p.nameBn ?? p.name ?? '',
+            categoryEn: p.category ?? 'fashion',
+            categoryBn: p.category ?? 'fashion',
+            priceEn: p.priceEn ?? p.price ?? 0,
+            priceBn: (p.priceEn ?? p.price ?? 0).toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]),
+            originalPriceEn: p.original_price ?? undefined,
+            originalPriceBn: p.original_price ? p.original_price.toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]) : undefined,
+            descriptionEn: p.descriptionEn ?? p.description ?? '',
+            descriptionBn: p.descriptionBn ?? p.description ?? '',
+            image: p.image_url ?? p.image ?? '',
+            images: p.images ?? (p.image_url ? [p.image_url] : []),
+            sizes: ['S', 'M', 'L', 'XL'],
+            badge: p.badge || (p.cod_available !== false ? 'COD Available' : ''),
+            isNew: p.is_featured ?? false,
+            stock: p.stock_qty ?? p.stock ?? 10
+          }));
+          
+          if (dbProducts.length > 0) {
+            setProducts(dbProducts);
+            if (cartItems.length === 0) {
+              setCartItems([
+                { product: dbProducts[0], size: 'L', quantity: 1 },
+                { product: dbProducts[1] || dbProducts[0], size: '32', quantity: 1 },
+              ]);
+            }
+          } else {
+             if (cartItems.length === 0) {
+              setCartItems([
+                { product: localProducts[0], size: 'L', quantity: 1 },
+                { product: localProducts[1], size: '32', quantity: 1 },
+              ]);
+            }
+          }
+        } else {
+           if (cartItems.length === 0) {
+             setCartItems([
+              { product: localProducts[0], size: 'L', quantity: 1 },
+              { product: localProducts[1], size: '32', quantity: 1 },
+            ]);
+           }
+        }
+      } catch (err) {
+        console.error('Failed to load dynamic data:', err);
+      }
+    }
+    loadDynamicData();
+  }, []);
 
   // Supabase Auth Listener
   useEffect(() => {
@@ -199,6 +268,7 @@ export default function StoreApp() {
         {/* Section 4: Best Sellers */}
         <BestSellers
           lang={lang}
+          products={products}
           selectedCategory={selectedCategory}
           onSelectCategoryFilter={(cat) => setSelectedCategory(cat)}
           onAddToCart={handleAddToCart}
@@ -269,6 +339,7 @@ export default function StoreApp() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         lang={lang}
+        products={products}
         onSelectProduct={(prod) => setQuickViewProduct(prod)}
       />
 
