@@ -6,17 +6,20 @@ import { supabase } from './utils/supabase';
 
 export default function App() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function checkRole() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
+        setIsLoggedIn(false);
         setIsAdmin(false);
         setLoading(false);
         return;
       }
       
+      setIsLoggedIn(true);
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -52,7 +55,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/admin/*" element={<AdminApp isAdmin={isAdmin} />} />
+      <Route path="/admin/*" element={<AdminApp isAdmin={isAdmin} isLoggedIn={isLoggedIn} />} />
       <Route path="/*" element={<StoreApp />} />
     </Routes>
   );
