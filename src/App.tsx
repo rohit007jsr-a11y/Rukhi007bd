@@ -21,6 +21,7 @@ import { ProductQuickView } from './components/ProductQuickView';
 import { SearchModal } from './components/SearchModal';
 import { LookbookModal } from './components/LookbookModal';
 import { AuthModal } from './components/AuthModal';
+import { WhatsAppButton } from './components/WhatsAppButton';
 
 export default function App() {
   // Language State - default 'en'
@@ -258,6 +259,13 @@ export default function App() {
         post={selectedLookbookPost}
         onClose={() => setSelectedLookbookPost(null)}
         lang={lang}
+      />
+
+      {/* Floating WhatsApp Support Button */}
+      <WhatsAppButton
+        lang={lang}
+        cartItems={cartItems}
+        currentUser={currentUser}
       />
 
     </div>
