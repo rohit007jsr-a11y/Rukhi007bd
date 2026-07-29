@@ -142,7 +142,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           ) : (
             <button
-              onClick={onOpenAuth}
+              onClick={() => onOpenAuth('login')}
               className={`p-2 rounded-full transition-colors cursor-pointer ${
                 isScrolled
                   ? 'hover:bg-gray-100 text-[#111111]'
@@ -216,7 +216,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             ) : (
               <button
-                onClick={() => { setMobileMenuOpen(false); onOpenAuth(); }}
+                onClick={() => { setMobileMenuOpen(false); onOpenAuth('login'); }}
                 className="flex items-center gap-1.5 text-xs font-bold text-[#E63946] border border-[#E63946] px-3 py-1 rounded cursor-pointer"
               >
                 <User className="w-3.5 h-3.5" />
