@@ -164,8 +164,9 @@ export const AdminSettings: React.FC = () => {
 
         <div className="flex justify-end pt-4">
           <button
-            type="submit"
-            className="flex items-center gap-2 bg-rukhi-black text-white px-8 py-4 font-bold uppercase hover:bg-rukhi-accent transition-colors shadow-[6px_6px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-1 hover:translate-y-1 transition-all"
+            type="button"
+            onClick={handleSubmit}
+            className="flex items-center gap-2 bg-rukhi-black text-white px-8 py-4 font-bold uppercase hover:bg-rukhi-accent transition-colors shadow-[6px_6px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer"
           >
             <Save size={20} /> Save Configuration
           </button>
