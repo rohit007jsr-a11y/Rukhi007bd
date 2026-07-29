@@ -1,0 +1,6 @@
+{
+  "name": "Rukhi",
+  "description": "Bangladesh-based streetwear and fashion online store with Cash-on-Delivery.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

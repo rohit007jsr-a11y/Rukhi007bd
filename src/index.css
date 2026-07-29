@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-heading-en {
+    font-family: 'Archivo Black', sans-serif;
+  }
+  .font-heading-bn {
+    font-family: 'Hind Siliguri', sans-serif;
+    font-weight: 700;
+  }
+  .font-body-en {
+    font-family: 'Inter', sans-serif;
+  }
+  .font-body-bn {
+    font-family: 'Hind Siliguri', sans-serif;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #111111;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E63946;
+}
