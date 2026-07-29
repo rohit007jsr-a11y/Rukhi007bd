@@ -37,44 +37,36 @@ export const SignInForm: React.FC<SignInFormProps> = ({
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error: signInErr } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+    try {
+      const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-        if (signInErr) {
-          const errMsg = signInErr.message.toLowerCase();
-          if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
-            setIsNotFound(true);
-            setError('Account not found. Please create a new account to continue.');
-          } else if (errMsg.includes('invalid password') || errMsg.includes('wrong password')) {
-            setError('Incorrect password. Please try again.');
-          } else {
-            setError(signInErr.message);
-          }
-          return;
+      if (signInErr) {
+        const errMsg = signInErr.message.toLowerCase();
+        if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
+          setIsNotFound(true);
+          setError('Account not found. Please create a new account to continue.');
+        } else if (errMsg.includes('invalid password') || errMsg.includes('wrong password')) {
+          setError('Incorrect password. Please try again.');
+        } else {
+          setError(signInErr.message);
         }
-
-        const userObj = data.user;
-        const userName = userObj?.user_metadata?.username || userObj?.user_metadata?.full_name || email.trim().split('@')[0];
-
-        onSuccess({
-          email: email.trim(),
-          name: userName,
-        });
-      } catch (err: any) {
-        setError(err.message || 'Failed to sign in. Please try again.');
-      } finally {
-        setLoading(false);
+        return;
       }
-    } else {
-      setLoading(false);
+
+      const userObj = data.user;
+      const userName = userObj?.user_metadata?.username || userObj?.user_metadata?.full_name || email.trim().split('@')[0];
+
       onSuccess({
         email: email.trim(),
-        name: email.trim().split('@')[0],
+        name: userName,
       });
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

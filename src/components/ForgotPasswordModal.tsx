@@ -39,25 +39,19 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error: resetErr } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-        });
+    try {
+      const { error: resetErr } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+      });
 
-        if (resetErr) throw resetErr;
+      if (resetErr) throw resetErr;
 
-        setInfoMessage('Verification code sent to your email');
-        setStep(2);
-      } catch (err: any) {
-        setError(err.message || 'Failed to send reset code. Please check your email.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
       setInfoMessage('Verification code sent to your email');
       setStep(2);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset code. Please check your email.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,25 +67,20 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error: verifyErr } = await supabase.auth.verifyOtp({
-          email: email.trim(),
-          token: otpToken.trim(),
-          type: 'email',
-        });
+    try {
+      const { error: verifyErr } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpToken.trim(),
+        type: 'email',
+      });
 
-        if (verifyErr) throw verifyErr;
+      if (verifyErr) throw verifyErr;
 
-        setStep(3);
-      } catch (err: any) {
-        setError(err.message || 'Invalid or expired code. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
       setStep(3);
+    } catch (err: any) {
+      setError(err.message || 'Invalid or expired code. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,31 +101,22 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error: updateErr } = await supabase.auth.updateUser({
-          password: newPassword,
-        });
+    try {
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
 
-        if (updateErr) throw updateErr;
+      if (updateErr) throw updateErr;
 
-        setInfoMessage('Password updated successfully!');
-        setTimeout(() => {
-          onSuccess();
-          onClose();
-        }, 1500);
-      } catch (err: any) {
-        setError(err.message || 'Failed to update password.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
       setInfoMessage('Password updated successfully!');
       setTimeout(() => {
         onSuccess();
         onClose();
-      }, 1200);
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update password.');
+    } finally {
+      setLoading(false);
     }
   };
 

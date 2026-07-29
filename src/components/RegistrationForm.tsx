@@ -39,25 +39,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error: otpErr } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-        });
+    try {
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+      });
 
-        if (otpErr) throw otpErr;
+      if (otpErr) throw otpErr;
 
-        setInfoMessage(`Verification code sent to ${email.trim()}`);
-        setStep(2);
-      } catch (err: any) {
-        setError(err.message || 'Failed to send OTP code. Please check your email.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
       setInfoMessage(`Verification code sent to ${email.trim()}`);
       setStep(2);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP code. Please check your email.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,25 +67,20 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error: verifyErr } = await supabase.auth.verifyOtp({
-          email: email.trim(),
-          token: otpToken.trim(),
-          type: 'email',
-        });
+    try {
+      const { error: verifyErr } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpToken.trim(),
+        type: 'email',
+      });
 
-        if (verifyErr) throw verifyErr;
+      if (verifyErr) throw verifyErr;
 
-        setStep(3);
-      } catch (err: any) {
-        setError(err.message || 'Invalid OTP code. Please check your inbox.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
       setStep(3);
+    } catch (err: any) {
+      setError(err.message || 'Invalid OTP code. Please check your inbox.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -127,54 +116,46 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
     setLoading(true);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
+    try {
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            username: username.trim(),
+            phone: phone.trim(),
+            address: address.trim(),
+          },
+        },
+      });
+
+      if (signUpErr) throw signUpErr;
+
+      // Try inserting into profiles table if authenticated user exists
+      if (signUpData?.user) {
+        try {
+          await supabase.from('profiles').upsert([
+            {
+              id: signUpData.user.id,
               username: username.trim(),
               phone: phone.trim(),
               address: address.trim(),
+              updated_at: new Date().toISOString(),
             },
-          },
-        });
-
-        if (signUpErr) throw signUpErr;
-
-        // Try inserting into profiles table if authenticated user exists
-        if (signUpData?.user) {
-          try {
-            await supabase.from('profiles').upsert([
-              {
-                id: signUpData.user.id,
-                username: username.trim(),
-                phone: phone.trim(),
-                address: address.trim(),
-                updated_at: new Date().toISOString(),
-              },
-            ]);
-          } catch (profileErr) {
-            console.log('Profile insert note:', profileErr);
-          }
+          ]);
+        } catch (profileErr) {
+          console.log('Profile insert note:', profileErr);
         }
-
-        onSuccess({
-          email: email.trim(),
-          name: username.trim(),
-        });
-      } catch (err: any) {
-        setError(err.message || 'Registration failed. Please try again.');
-      } finally {
-        setLoading(false);
       }
-    } else {
-      setLoading(false);
+
       onSuccess({
         email: email.trim(),
         name: username.trim(),
       });
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
