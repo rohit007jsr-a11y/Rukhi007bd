@@ -28,7 +28,7 @@ export default function App() {
   const [lang, setLang] = useState<Language>('en');
 
   // User Auth State
-  const [currentUser, setCurrentUser] = useState<{ email: string; name?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ email: string; name?: string; phone?: string; address?: string } | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authInitialTab, setAuthInitialTab] = useState<'login' | 'register'>('register');
   const [pendingOrderCallback, setPendingOrderCallback] = useState<(() => void) | null>(null);
@@ -44,15 +44,36 @@ export default function App() {
 
   // Supabase Auth Listener
   useEffect(() => {
+    async function fetchProfileAndSetUser(user: any) {
+      if (!user) return;
+      
+      let profileData: any = {};
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username, phone, address')
+          .eq('id', user.id)
+          .single();
+        if (!error && data) {
+          profileData = data;
+        }
+      } catch (err) {
+        console.log('Failed to fetch profile:', err);
+      }
+
+      setCurrentUser({
+        email: user.email || '',
+        name: profileData.username || user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split('@')[0],
+        phone: profileData.phone || user.user_metadata?.phone,
+        address: profileData.address || user.user_metadata?.address,
+      });
+    }
+
     async function checkSupabaseSession() {
       try {
         const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
-          const user = data.session.user;
-          setCurrentUser({
-            email: user.email || '',
-            name: user.user_metadata?.full_name || user.email?.split('@')[0],
-          });
+          await fetchProfileAndSetUser(data.session.user);
         }
       } catch (err) {
         console.log('Supabase session check error:', err);
@@ -61,12 +82,9 @@ export default function App() {
 
     checkSupabaseSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        setCurrentUser({
-          email: session.user.email || '',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
-        });
+        await fetchProfileAndSetUser(session.user);
       } else if (_event === 'SIGNED_OUT') {
         setCurrentUser(null);
       }

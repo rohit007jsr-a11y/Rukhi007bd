@@ -4,7 +4,7 @@ import { PasswordInput } from './PasswordInput';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface RegistrationFormProps {
-  onSuccess: (user: { email: string; name?: string }) => void;
+  onSuccess: (user: { email: string; name?: string; phone?: string; address?: string }) => void;
   onSwitchToSignIn: () => void;
 }
 
@@ -117,26 +117,23 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setLoading(true);
 
     try {
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: email.trim(),
+      const { data: updateData, error: updateErr } = await supabase.auth.updateUser({
         password,
-        options: {
-          data: {
-            username: username.trim(),
-            phone: phone.trim(),
-            address: address.trim(),
-          },
+        data: {
+          username: username.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
         },
       });
 
-      if (signUpErr) throw signUpErr;
+      if (updateErr) throw updateErr;
 
       // Try inserting into profiles table if authenticated user exists
-      if (signUpData?.user) {
+      if (updateData?.user) {
         try {
           await supabase.from('profiles').upsert([
             {
-              id: signUpData.user.id,
+              id: updateData.user.id,
               username: username.trim(),
               phone: phone.trim(),
               address: address.trim(),
@@ -151,6 +148,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       onSuccess({
         email: email.trim(),
         name: username.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
       });
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');

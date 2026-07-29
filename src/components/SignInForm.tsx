@@ -4,7 +4,7 @@ import { PasswordInput } from './PasswordInput';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface SignInFormProps {
-  onSuccess: (user: { email: string; name?: string }) => void;
+  onSuccess: (user: { email: string; name?: string; phone?: string; address?: string }) => void;
   onForgotPassword: () => void;
   onSwitchToRegister: () => void;
 }
@@ -45,11 +45,13 @@ export const SignInForm: React.FC<SignInFormProps> = ({
 
       if (signInErr) {
         const errMsg = signInErr.message.toLowerCase();
-        if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
+        if (errMsg.includes('email not confirmed')) {
+          setError('Please verify your email address before signing in.');
+        } else if (errMsg.includes('invalid login credentials')) {
+          setError('Invalid email or password. Please try again.');
+        } else if (errMsg.includes('user not found')) {
           setIsNotFound(true);
           setError('Account not found. Please create a new account to continue.');
-        } else if (errMsg.includes('invalid password') || errMsg.includes('wrong password')) {
-          setError('Incorrect password. Please try again.');
         } else {
           setError(signInErr.message);
         }
@@ -57,11 +59,33 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       }
 
       const userObj = data.user;
-      const userName = userObj?.user_metadata?.username || userObj?.user_metadata?.full_name || email.trim().split('@')[0];
+      let userName = userObj?.user_metadata?.username || userObj?.user_metadata?.full_name || email.trim().split('@')[0];
+      let phone = userObj?.user_metadata?.phone;
+      let address = userObj?.user_metadata?.address;
+
+      if (userObj) {
+        try {
+          const { data: profileData, error: profileErr } = await supabase
+            .from('profiles')
+            .select('username, phone, address')
+            .eq('id', userObj.id)
+            .single();
+            
+          if (!profileErr && profileData) {
+            userName = profileData.username || userName;
+            phone = profileData.phone || phone;
+            address = profileData.address || address;
+          }
+        } catch (err) {
+          console.log('Failed to fetch profile during sign in', err);
+        }
+      }
 
       onSuccess({
         email: email.trim(),
         name: userName,
+        phone,
+        address,
       });
     } catch (err: any) {
       setError(err.message || 'Failed to sign in. Please try again.');

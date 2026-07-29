@@ -11,7 +11,7 @@ interface CheckoutModalProps {
   lang: Language;
   cartItems: CartItem[];
   onOrderSuccess: () => void;
-  currentUser: { email: string; name?: string } | null;
+  currentUser: { email: string; name?: string; phone?: string; address?: string } | null;
   onRequestAuth: (onSuccessCallback: () => void) => void;
 }
 
@@ -24,21 +24,35 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   currentUser,
   onRequestAuth,
 }) => {
+  const [fullName, setFullName] = useState(currentUser?.name || '');
+  const [phone, setPhone] = useState(currentUser?.phone || '');
+  const [district, setDistrict] = useState('Dhaka');
+  const [address, setAddress] = useState(currentUser?.address || '');
+  const [notes, setNotes] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [orderId, setOrderId] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (currentUser) {
+        setFullName(currentUser.name || '');
+        setPhone(currentUser.phone || '');
+        setAddress(currentUser.address || '');
+      }
+      setIsSubmitted(false);
+      setOrderId('');
+      setNotes('');
+      setErrors({});
+    }
+  }, [isOpen, currentUser]);
+
   if (!isOpen) return null;
 
   const t = translations[lang].checkout;
   const authT = translations[lang].auth;
   const headingFontClass = lang === 'en' ? 'font-heading-en' : 'font-heading-bn';
   const bodyFontClass = lang === 'en' ? 'font-body-en' : 'font-body-bn';
-
-  const [fullName, setFullName] = useState(currentUser?.name || '');
-  const [phone, setPhone] = useState('');
-  const [district, setDistrict] = useState('Dhaka');
-  const [address, setAddress] = useState('');
-  const [notes, setNotes] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [orderId, setOrderId] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.priceEn * item.quantity,

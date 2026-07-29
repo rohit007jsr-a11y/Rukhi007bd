@@ -5,7 +5,7 @@ import { Language, CartItem } from '../types';
 interface WhatsAppButtonProps {
   lang: Language;
   cartItems: CartItem[];
-  currentUser: { email: string; name?: string } | null;
+  currentUser: { email: string; name?: string; phone?: string; address?: string } | null;
 }
 
 export const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({

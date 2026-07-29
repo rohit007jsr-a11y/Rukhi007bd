@@ -11,7 +11,7 @@ interface AuthModalProps {
   onClose: () => void;
   lang: Language;
   cartItems: CartItem[];
-  onAuthSuccess: (user: { email: string; name?: string }) => void;
+  onAuthSuccess: (user: { email: string; name?: string; phone?: string; address?: string }) => void;
   initialTab?: 'login' | 'register';
 }
 
@@ -23,8 +23,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onAuthSuccess,
   initialTab = 'register',
 }) => {
-  if (!isOpen) return null;
-
   const [activeTab, setActiveTab] = useState<'register' | 'login'>(initialTab);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -33,6 +31,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   React.useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab, isOpen]);
+
+  if (!isOpen) return null;
 
   const t = translations[lang].auth;
   const headingFontClass = lang === 'en' ? 'font-heading-en' : 'font-heading-bn';
@@ -43,7 +43,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     0
   );
 
-  const handleSuccess = (user: { email: string; name?: string }) => {
+  const handleSuccess = (user: { email: string; name?: string; phone?: string; address?: string }) => {
     setSuccessToast(`Welcome back, ${user.name || user.email}!`);
     setTimeout(() => {
       onAuthSuccess(user);
