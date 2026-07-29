@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import StoreApp from './StoreApp';
 import { AdminApp } from './admin/AdminApp';
 import { supabase } from './utils/supabase';
@@ -8,6 +8,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     async function checkRole() {
@@ -19,7 +20,7 @@ export default function App() {
         return;
       }
       
-      setIsLoggedIn(true);
+      let adminStatus = false;
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -28,13 +29,14 @@ export default function App() {
           .single();
           
         if (!error && data?.role === 'admin') {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
+          adminStatus = true;
         }
       } catch (err) {
-        setIsAdmin(false);
+        console.error('Failed to fetch profile role:', err);
+        adminStatus = false;
       } finally {
+        setIsLoggedIn(true);
+        setIsAdmin(adminStatus);
         setLoading(false);
       }
     }
@@ -51,6 +53,11 @@ export default function App() {
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center font-bold text-2xl font-heading-en text-rukhi-black">Loading Rukhi...</div>;
+  }
+
+  // If the user is logged in and is an admin, and they are not on an admin route, redirect them to the admin dashboard
+  if (isLoggedIn && isAdmin && !location.pathname.startsWith('/admin')) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return (

@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@theme {
+  --color-rukhi-black: #111111;
+  --color-rukhi-accent: #E63946;
+  --color-rukhi-bg: #F7F7F5;
+  --color-rukhi-muted: #6B7280;
+}
+
 @layer utilities {
   .font-heading-en {
     font-family: 'Archivo Black', sans-serif;

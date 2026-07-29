@@ -24,9 +24,11 @@ export const AdminProducts: React.FC = () => {
     category: 'fashion',
     cod_available: true,
     status: 'active',
+    imageUrls: '',
   });
   const [images, setImages] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [dbColumns, setDbColumns] = useState<string[]>([]);
 
   // Bulk action category selector state
   const [bulkCategoryTarget, setBulkCategoryTarget] = useState('fashion');
@@ -42,13 +44,37 @@ export const AdminProducts: React.FC = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .neq('status', 'deleted')
         .order('created_at', { ascending: false });
         
       if (error) {
         console.error(error);
       } else {
-        setProducts(data || []);
+        const rawProducts = data || [];
+        if (rawProducts.length > 0) {
+          const columns = Object.keys(rawProducts[0]);
+          setDbColumns(columns);
+        } else {
+          setDbColumns(['id', 'name', 'category', 'price', 'description', 'image_url', 'stock', 'badge', 'is_featured', 'created_at']);
+        }
+
+        const mapped = rawProducts.map((p: any) => {
+          return {
+            id: p.id,
+            nameEn: p.nameEn ?? p.name ?? '',
+            nameBn: p.nameBn ?? p.name ?? '',
+            descriptionEn: p.descriptionEn ?? p.description ?? '',
+            descriptionBn: p.descriptionBn ?? p.description ?? '',
+            priceEn: p.priceEn ?? p.price ?? 0,
+            stock_qty: p.stock_qty ?? p.stock ?? 0,
+            category: p.category || 'general',
+            cod_available: p.cod_available ?? (p.badge?.toLowerCase().includes('cod') || true),
+            status: p.status ?? (p.is_featured === false ? 'hidden' : 'active'),
+            images: p.images ?? (p.image_url ? [p.image_url] : p.image ? [p.image] : []),
+            image: p.image ?? p.image_url ?? 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
+          };
+        }).filter((p: any) => p.status !== 'deleted');
+
+        setProducts(mapped);
       }
     } catch (err) {
       console.error('Failed to fetch products:', err);
@@ -82,13 +108,35 @@ export const AdminProducts: React.FC = () => {
     if (!window.confirm(`Are you sure you want to ${confirmMsg}`)) return;
 
     try {
+      let isDelete = action === 'delete';
+      let isHide = action === 'hide';
+
+      if (isDelete && !dbColumns.includes('status')) {
+        // Hard delete if status column doesn't exist
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .in('id', selectedIds);
+        if (error) throw error;
+        setProducts(prev => prev.filter(p => !selectedIds.includes(p.id)));
+        setSelectedIds([]);
+        alert('Bulk action completed successfully!');
+        return;
+      }
+
       let updatePayload: any = {};
-      if (action === 'delete') {
+      if (isDelete) {
         updatePayload = { status: 'deleted' };
-      } else if (action === 'hide') {
-        updatePayload = { status: 'hidden' };
+      } else if (isHide) {
+        if (dbColumns.includes('status')) {
+          updatePayload = { status: 'hidden' };
+        } else if (dbColumns.includes('is_featured')) {
+          updatePayload = { is_featured: false };
+        }
       } else {
-        updatePayload = { category: bulkCategoryTarget };
+        if (dbColumns.includes('category')) {
+          updatePayload = { category: bulkCategoryTarget };
+        }
       }
 
       const { error } = await supabase
@@ -98,7 +146,7 @@ export const AdminProducts: React.FC = () => {
 
       if (error) throw error;
       
-      if (action === 'delete') {
+      if (isDelete) {
         setProducts(prev => prev.filter(p => !selectedIds.includes(p.id)));
       } else {
         setProducts(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, ...updatePayload } : p));
@@ -113,18 +161,35 @@ export const AdminProducts: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this product? (Soft-deletes to "deleted")')) return;
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({ status: 'deleted' })
-        .eq('id', id);
-
-      if (error) throw error;
+      if (!dbColumns.includes('status')) {
+        // Hard delete if status column doesn't exist
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('products')
+          .update({ status: 'deleted' })
+          .eq('id', id);
+        if (error) throw error;
+      }
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err) {
       alert('Delete failed');
     }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -132,8 +197,20 @@ export const AdminProducts: React.FC = () => {
     setUploading(true);
 
     try {
-      // 1. Upload Images to Supabase Storage if any are selected
-      let uploadedImageUrls: string[] = editingProduct?.images || [];
+      // 1. Parse manual image URLs from input field
+      let manualUrls: string[] = formData.imageUrls
+        ? formData.imageUrls.split(',').map(url => url.trim()).filter(Boolean)
+        : [];
+
+      // 2. Upload Images to Supabase Storage if any are selected, or fall back to Base64
+      let uploadedImageUrls: string[] = [...manualUrls];
+
+      // If we are editing, we can preserve existing images if no new manual/uploaded ones conflict, or keep them
+      if (editingProduct?.images && editingProduct.images.length > 0) {
+        const existingToKeep = editingProduct.images.filter((img: string) => !manualUrls.includes(img));
+        // Keep existing ones and append manual ones
+        uploadedImageUrls = [...existingToKeep, ...manualUrls];
+      }
       
       if (images.length > 0) {
         for (const file of images) {
@@ -141,35 +218,92 @@ export const AdminProducts: React.FC = () => {
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `${fileName}`;
 
-          // Standard Supabase storage upload
-          const { error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, file);
-
-          if (uploadError) {
-             console.error('Upload error', uploadError);
-          } else {
-             const { data: publicUrlData } = supabase.storage
+          let urlToUse = '';
+          try {
+            // Standard Supabase storage upload
+            const { error: uploadError } = await supabase.storage
               .from('product-images')
-              .getPublicUrl(filePath);
-             uploadedImageUrls.push(publicUrlData.publicUrl);
+              .upload(filePath, file);
+
+            if (uploadError) {
+              console.warn('Supabase storage upload failed, falling back to Base64 local encoding:', uploadError);
+              const base64Data = await fileToBase64(file);
+              urlToUse = base64Data;
+            } else {
+              const { data: publicUrlData } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
+              urlToUse = publicUrlData.publicUrl;
+            }
+          } catch (storageErr) {
+            console.warn('Storage API exception, falling back to Base64 local encoding:', storageErr);
+            const base64Data = await fileToBase64(file);
+            urlToUse = base64Data;
           }
+          uploadedImageUrls.push(urlToUse);
         }
       }
 
-      const productPayload = {
-        nameEn: formData.nameEn,
-        nameBn: formData.nameBn,
-        descriptionEn: formData.descriptionEn,
-        descriptionBn: formData.descriptionBn,
-        priceEn: parseFloat(formData.priceEn),
-        stock_qty: parseInt(formData.stock_qty, 10),
-        category: formData.category,
-        cod_available: formData.cod_available,
-        status: formData.status,
-        images: uploadedImageUrls,
-        image: uploadedImageUrls[0] || editingProduct?.image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
-      };
+      // Ensure we have unique URLs
+      uploadedImageUrls = Array.from(new Set(uploadedImageUrls));
+
+      // Construct a payload dynamically mapping only to columns that actually exist in the DB
+      const productPayload: any = {};
+      const actualCols = dbColumns.length > 0 ? dbColumns : ['id', 'name', 'category', 'price', 'description', 'image_url', 'stock', 'badge', 'is_featured', 'created_at'];
+
+      if (actualCols.includes('nameEn')) {
+        productPayload.nameEn = formData.nameEn;
+        productPayload.nameBn = formData.nameBn;
+      } else if (actualCols.includes('name')) {
+        productPayload.name = formData.nameEn || formData.nameBn;
+      }
+
+      if (actualCols.includes('descriptionEn')) {
+        productPayload.descriptionEn = formData.descriptionEn;
+        productPayload.descriptionBn = formData.descriptionBn;
+      } else if (actualCols.includes('description')) {
+        productPayload.description = formData.descriptionEn || formData.descriptionBn;
+      }
+
+      if (actualCols.includes('priceEn')) {
+        productPayload.priceEn = parseFloat(formData.priceEn) || 0;
+      } else if (actualCols.includes('price')) {
+        productPayload.price = parseFloat(formData.priceEn) || 0;
+      }
+
+      if (actualCols.includes('stock_qty')) {
+        productPayload.stock_qty = parseInt(formData.stock_qty, 10) || 0;
+      } else if (actualCols.includes('stock')) {
+        productPayload.stock = parseInt(formData.stock_qty, 10) || 0;
+      }
+
+      if (actualCols.includes('category')) {
+        productPayload.category = formData.category;
+      }
+
+      if (actualCols.includes('cod_available')) {
+        productPayload.cod_available = formData.cod_available;
+      }
+
+      if (actualCols.includes('status')) {
+        productPayload.status = formData.status;
+      }
+
+      if (actualCols.includes('is_featured')) {
+        productPayload.is_featured = formData.status === 'active';
+      }
+
+      const imageUrl = uploadedImageUrls[0] || editingProduct?.image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800';
+
+      if (actualCols.includes('image')) {
+        productPayload.image = imageUrl;
+      }
+      if (actualCols.includes('image_url')) {
+        productPayload.image_url = imageUrl;
+      }
+      if (actualCols.includes('images')) {
+        productPayload.images = uploadedImageUrls;
+      }
 
       if (editingProduct) {
         const { error } = await supabase
@@ -209,12 +343,14 @@ export const AdminProducts: React.FC = () => {
         category: product.category || 'fashion',
         cod_available: product.cod_available ?? true,
         status: product.status || 'active',
+        imageUrls: product.images ? product.images.join(', ') : '',
       });
     } else {
       setEditingProduct(null);
       setFormData({
         nameEn: '', nameBn: '', descriptionEn: '', descriptionBn: '',
-        priceEn: '', stock_qty: '', category: 'fashion', cod_available: true, status: 'active'
+        priceEn: '', stock_qty: '', category: 'fashion', cod_available: true, status: 'active',
+        imageUrls: '',
       });
     }
     setImages([]);
@@ -560,6 +696,20 @@ export const AdminProducts: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t-2 border-gray-200">
+                <label className="block text-xs font-extrabold uppercase mb-1">Image URLs (comma-separated, optional)</label>
+                <input 
+                  type="text" 
+                  value={formData.imageUrls} 
+                  onChange={e => setFormData({...formData, imageUrls: e.target.value})} 
+                  placeholder="https://images.unsplash.com/..., https://..." 
+                  className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent text-sm" 
+                />
+                <p className="text-[11px] text-gray-500 mt-1 font-medium leading-relaxed">
+                  Provide external public image URLs directly, or upload files below.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200">
                 <label className="block text-xs font-extrabold uppercase mb-2">Upload Product Images</label>
                 <input 
                   type="file" 
@@ -569,7 +719,7 @@ export const AdminProducts: React.FC = () => {
                   className="w-full border-2 border-rukhi-black p-2 bg-gray-50 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-extrabold file:bg-rukhi-black file:text-white hover:file:bg-[#E63946] file:uppercase file:tracking-wider cursor-pointer" 
                 />
                 <p className="text-[11px] text-gray-500 mt-1.5 font-medium leading-relaxed">
-                  You can select multiple covers to upload to Supabase Storage. The first one will serve as the default thumbnail.
+                  Alternatively, select files to upload. If the bucket is missing/inaccessible, they will automatically be encoded safely as Base64.
                 </p>
               </div>
 

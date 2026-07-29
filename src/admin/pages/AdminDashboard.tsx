@@ -40,13 +40,20 @@ export const AdminDashboard: React.FC = () => {
       // Fetch active/hidden products to find low stock count
       const { data: allProducts, error: productsErr } = await supabase
         .from('products')
-        .select('id, nameEn, stock_qty')
-        .neq('status', 'deleted');
+        .select('*');
 
       if (ordersErr) throw ordersErr;
+      if (productsErr) {
+        console.warn('Could not fetch products for stats:', productsErr);
+      }
 
       const orderList = allOrders || [];
-      const productList = allProducts || [];
+      const productList = (allProducts || []).map((p: any) => ({
+        id: p.id,
+        nameEn: p.nameEn ?? p.name ?? '',
+        stock_qty: p.stock_qty ?? p.stock ?? 0,
+        status: p.status ?? 'active',
+      })).filter((p: any) => p.status !== 'deleted');
 
       // Calculate stats
       const todayOrders = orderList.filter(o => new Date(o.created_at) >= today);
