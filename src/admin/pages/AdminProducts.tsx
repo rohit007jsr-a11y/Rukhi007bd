@@ -57,22 +57,25 @@ export const AdminProducts: React.FC = () => {
           setDbColumns(['id', 'name', 'category', 'price', 'description', 'image_url', 'stock', 'badge', 'is_featured', 'created_at']);
         }
 
-        const mapped = rawProducts.map((p: any) => {
-          return {
-            id: p.id,
-            nameEn: p.nameEn ?? p.name ?? '',
-            nameBn: p.nameBn ?? p.name ?? '',
-            descriptionEn: p.descriptionEn ?? p.description ?? '',
-            descriptionBn: p.descriptionBn ?? p.description ?? '',
-            priceEn: p.priceEn ?? p.price ?? 0,
-            stock_qty: p.stock_qty ?? p.stock ?? 0,
-            category: p.category || 'general',
-            cod_available: p.cod_available ?? (p.badge?.toLowerCase().includes('cod') || true),
-            status: p.status ?? (p.is_featured === false ? 'hidden' : 'active'),
-            images: p.images ?? (p.image_url ? [p.image_url] : p.image ? [p.image] : []),
-            image: p.image ?? p.image_url ?? 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
-          };
-        }).filter((p: any) => p.status !== 'deleted');
+        const mapped = rawProducts
+          .filter((p: any) => p.name !== 'SYSTEM_SETTINGS')
+          .map((p: any) => {
+            return {
+              id: p.id,
+              nameEn: p.nameEn ?? p.name ?? '',
+              nameBn: p.nameBn ?? p.name ?? '',
+              descriptionEn: p.descriptionEn ?? p.description ?? '',
+              descriptionBn: p.descriptionBn ?? p.description ?? '',
+              priceEn: p.priceEn ?? p.price ?? 0,
+              stock_qty: p.stock_qty ?? p.stock ?? 0,
+              category: p.category || 'fashion',
+              cod_available: p.cod_available ?? (p.badge?.toLowerCase().includes('cod') || true),
+              status: p.status ?? (p.is_featured === false ? 'hidden' : 'active'),
+              images: p.images ?? (p.image_url ? [p.image_url] : p.image ? [p.image] : []),
+              image: p.image ?? p.image_url ?? 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
+            };
+          })
+          .filter((p: any) => p.status !== 'deleted');
 
         setProducts(mapped);
       }
@@ -183,13 +186,59 @@ export const AdminProducts: React.FC = () => {
     }
   };
 
-  const fileToBase64 = (file: File): Promise<string> => {
+  // Canvas image compression helper to prevent payload size errors
+  const compressImageFile = (file: File, maxDim = 800, quality = 0.8): Promise<string> => {
     return new Promise((resolve, reject) => {
+      const img = new Image();
       const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(reader.result as string);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
     });
+  };
+
+  // Process image file upload via server endpoint or compressed data URL
+  const processImageUpload = async (file: File): Promise<string> => {
+    const compressedDataUrl = await compressImageFile(file);
+    try {
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: compressedDataUrl, filename: file.name }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.url) {
+          return json.url;
+        }
+      }
+    } catch (e) {
+      console.warn('Server upload endpoint unreachable, falling back to compressed image URL:', e);
+    }
+    return compressedDataUrl;
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -202,114 +251,107 @@ export const AdminProducts: React.FC = () => {
         ? formData.imageUrls.split(',').map(url => url.trim()).filter(Boolean)
         : [];
 
-      // 2. Upload Images to Supabase Storage if any are selected, or fall back to Base64
       let uploadedImageUrls: string[] = [...manualUrls];
 
-      // If we are editing, we can preserve existing images if no new manual/uploaded ones conflict, or keep them
-      if (editingProduct?.images && editingProduct.images.length > 0) {
-        const existingToKeep = editingProduct.images.filter((img: string) => !manualUrls.includes(img));
-        // Keep existing ones and append manual ones
-        uploadedImageUrls = [...existingToKeep, ...manualUrls];
-      }
-      
+      // 2. Upload file inputs
       if (images.length > 0) {
         for (const file of images) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
-          const filePath = `${fileName}`;
-
-          let urlToUse = '';
-          try {
-            // Standard Supabase storage upload
-            const { error: uploadError } = await supabase.storage
-              .from('product-images')
-              .upload(filePath, file);
-
-            if (uploadError) {
-              console.warn('Supabase storage upload failed, falling back to Base64 local encoding:', uploadError);
-              const base64Data = await fileToBase64(file);
-              urlToUse = base64Data;
-            } else {
-              const { data: publicUrlData } = supabase.storage
-                .from('product-images')
-                .getPublicUrl(filePath);
-              urlToUse = publicUrlData.publicUrl;
-            }
-          } catch (storageErr) {
-            console.warn('Storage API exception, falling back to Base64 local encoding:', storageErr);
-            const base64Data = await fileToBase64(file);
-            urlToUse = base64Data;
+          const uploadedUrl = await processImageUpload(file);
+          if (uploadedUrl) {
+            uploadedImageUrls.push(uploadedUrl);
           }
-          uploadedImageUrls.push(urlToUse);
         }
       }
 
       // Ensure we have unique URLs
       uploadedImageUrls = Array.from(new Set(uploadedImageUrls));
 
-      // Construct a payload dynamically mapping only to columns that actually exist in the DB
-      const productPayload: any = {};
       const actualCols = dbColumns.length > 0 ? dbColumns : ['id', 'name', 'category', 'price', 'description', 'image_url', 'stock', 'badge', 'is_featured', 'created_at'];
 
+      const productPayload: any = {};
+
+      // Name
+      const nameVal = formData.nameEn.trim() || formData.nameBn.trim() || 'New Streetwear Product';
+      if (actualCols.includes('name')) {
+        productPayload.name = nameVal;
+      }
       if (actualCols.includes('nameEn')) {
-        productPayload.nameEn = formData.nameEn;
-        productPayload.nameBn = formData.nameBn;
-      } else if (actualCols.includes('name')) {
-        productPayload.name = formData.nameEn || formData.nameBn;
+        productPayload.nameEn = formData.nameEn.trim() || nameVal;
+      }
+      if (actualCols.includes('nameBn')) {
+        productPayload.nameBn = formData.nameBn.trim() || nameVal;
       }
 
+      // Description
+      const descVal = formData.descriptionEn.trim() || formData.descriptionBn.trim() || 'Rukhi streetwear item.';
+      if (actualCols.includes('description')) {
+        productPayload.description = descVal;
+      }
       if (actualCols.includes('descriptionEn')) {
-        productPayload.descriptionEn = formData.descriptionEn;
-        productPayload.descriptionBn = formData.descriptionBn;
-      } else if (actualCols.includes('description')) {
-        productPayload.description = formData.descriptionEn || formData.descriptionBn;
+        productPayload.descriptionEn = formData.descriptionEn.trim() || descVal;
+      }
+      if (actualCols.includes('descriptionBn')) {
+        productPayload.descriptionBn = formData.descriptionBn.trim() || descVal;
       }
 
+      // Price
+      const priceNum = parseFloat(formData.priceEn) || 0;
+      if (actualCols.includes('price')) {
+        productPayload.price = priceNum;
+      }
       if (actualCols.includes('priceEn')) {
-        productPayload.priceEn = parseFloat(formData.priceEn) || 0;
-      } else if (actualCols.includes('price')) {
-        productPayload.price = parseFloat(formData.priceEn) || 0;
+        productPayload.priceEn = priceNum;
       }
 
+      // Stock
+      const stockNum = parseInt(formData.stock_qty, 10) || 10;
+      if (actualCols.includes('stock')) {
+        productPayload.stock = stockNum;
+      }
       if (actualCols.includes('stock_qty')) {
-        productPayload.stock_qty = parseInt(formData.stock_qty, 10) || 0;
-      } else if (actualCols.includes('stock')) {
-        productPayload.stock = parseInt(formData.stock_qty, 10) || 0;
+        productPayload.stock_qty = stockNum;
       }
 
+      // Category
       if (actualCols.includes('category')) {
-        productPayload.category = formData.category;
+        productPayload.category = formData.category || 'fashion';
       }
 
+      // COD Available & Badge
       if (actualCols.includes('cod_available')) {
         productPayload.cod_available = formData.cod_available;
       }
+      if (actualCols.includes('badge')) {
+        productPayload.badge = formData.cod_available ? 'COD Available' : '';
+      }
 
+      // Status & Featured
       if (actualCols.includes('status')) {
         productPayload.status = formData.status;
       }
-
       if (actualCols.includes('is_featured')) {
         productPayload.is_featured = formData.status === 'active';
       }
 
-      const imageUrl = uploadedImageUrls[0] || editingProduct?.image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800';
+      // Image
+      const mainImageUrl = uploadedImageUrls[0] || editingProduct?.image || editingProduct?.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800';
 
-      if (actualCols.includes('image')) {
-        productPayload.image = imageUrl;
-      }
       if (actualCols.includes('image_url')) {
-        productPayload.image_url = imageUrl;
+        productPayload.image_url = mainImageUrl;
+      }
+      if (actualCols.includes('image')) {
+        productPayload.image = mainImageUrl;
       }
       if (actualCols.includes('images')) {
-        productPayload.images = uploadedImageUrls;
+        productPayload.images = uploadedImageUrls.length > 0 ? uploadedImageUrls : [mainImageUrl];
       }
 
       if (editingProduct) {
+        const prodId = Number(editingProduct.id) || editingProduct.id;
         const { error } = await supabase
           .from('products')
           .update(productPayload)
-          .eq('id', editingProduct.id);
+          .eq('id', prodId);
         if (error) throw error;
       } else {
         const { error } = await supabase
@@ -318,12 +360,15 @@ export const AdminProducts: React.FC = () => {
         if (error) throw error;
       }
 
+      // Dispatch event to notify storefront in real time
+      window.dispatchEvent(new CustomEvent('rukhi-products-updated'));
+
       setIsModalOpen(false);
       setEditingProduct(null);
-      fetchProducts();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save product. Ensure the products table has the correct schema.');
+      await fetchProducts();
+    } catch (err: any) {
+      console.error('Save product error:', err);
+      alert(`Failed to save product: ${err.message || 'Ensure fields are valid.'}`);
     } finally {
       setUploading(false);
       setImages([]);
@@ -695,8 +740,32 @@ export const AdminProducts: React.FC = () => {
                 </label>
               </div>
 
-              <div className="pt-4 border-t-2 border-gray-200">
-                <label className="block text-xs font-extrabold uppercase mb-1">Image URLs (comma-separated, optional)</label>
+              <div className="pt-4 border-t-2 border-gray-200 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <label className="block text-xs font-extrabold uppercase">Image URL or Select Streetwear Preset</label>
+                  <span className="text-[10px] text-gray-500 font-extrabold uppercase">Quick Catalog Presets:</span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 pb-1">
+                  {[
+                    { label: 'Hoodie', url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80' },
+                    { label: 'Graphic Tee', url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80' },
+                    { label: 'Cargo Pants', url: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80' },
+                    { label: 'Urban Jacket', url: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80' },
+                    { label: 'Earbuds', url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80' },
+                    { label: 'Jamdani Saree', url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80' },
+                  ].map(preset => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, imageUrls: preset.url })}
+                      className="px-2 py-1 text-[10px] font-bold uppercase bg-gray-100 hover:bg-[#111111] hover:text-white border border-gray-300 transition-colors cursor-pointer"
+                    >
+                      + {preset.label}
+                    </button>
+                  ))}
+                </div>
+
                 <input 
                   type="text" 
                   value={formData.imageUrls} 
@@ -705,7 +774,7 @@ export const AdminProducts: React.FC = () => {
                   className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent text-sm" 
                 />
                 <p className="text-[11px] text-gray-500 mt-1 font-medium leading-relaxed">
-                  Provide external public image URLs directly, or upload files below.
+                  Provide external image URLs directly, select a preset above, or upload file below.
                 </p>
               </div>
 

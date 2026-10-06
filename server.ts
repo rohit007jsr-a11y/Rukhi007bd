@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
@@ -11,7 +12,52 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
+
+// Setup uploads directory for product images
+const uploadsDir = path.resolve(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+/**
+ * Route: Upload product image
+ */
+app.post('/api/upload-image', (req, res) => {
+  try {
+    const { data } = req.body;
+    if (!data) {
+      return res.status(400).json({ success: false, message: 'No image data provided' });
+    }
+
+    let base64Data = data;
+    let ext = 'jpg';
+
+    if (data.includes(';base64,')) {
+      const parts = data.split(';base64,');
+      const mime = parts[0].split(':')[1];
+      if (mime) {
+        ext = mime.split('/')[1] || 'jpg';
+      }
+      base64Data = parts[1];
+    }
+
+    const safeExt = ext.replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+    const safeName = `product_${Date.now()}_${Math.floor(Math.random() * 100000)}.${safeExt}`;
+    const filePath = path.join(uploadsDir, safeName);
+    
+    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+    return res.json({
+      success: true,
+      url: `/uploads/${safeName}`,
+    });
+  } catch (err: any) {
+    console.error('Image upload failed:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to save image' });
+  }
+});
 
 /**
  * Helper to attempt sending via Resend API

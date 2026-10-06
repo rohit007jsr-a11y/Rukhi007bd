@@ -100,7 +100,7 @@ export default function StoreApp() {
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .neq('status', 'deleted');
+          .order('created_at', { ascending: false });
 
         if (!error && data) {
           const settingsProduct = data.find(p => p.name === 'SYSTEM_SETTINGS');
@@ -161,8 +161,14 @@ export default function StoreApp() {
       )
       .subscribe();
 
+    const handleProductsUpdated = () => {
+      loadDynamicData();
+    };
+    window.addEventListener('rukhi-products-updated', handleProductsUpdated);
+
     return () => {
       supabase.removeChannel(productsChannel);
+      window.removeEventListener('rukhi-products-updated', handleProductsUpdated);
     };
   }, []);
 
