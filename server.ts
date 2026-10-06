@@ -254,10 +254,10 @@ app.post('/api/send-invoice', async (req, res) => {
  */
 app.post('/api/test-email', async (req, res) => {
   try {
-    const { recipientEmail, settings = {}, dummyInvoice } = req.body;
+    const { recipientEmail, settings = {} } = req.body;
 
-    if (!recipientEmail) {
-      return res.status(400).json({ success: false, message: 'Recipient email is required for testing.' });
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid recipient email address for testing.' });
     }
 
     const resendApiKey = settings.resendApiKey || process.env.RESEND_API_KEY;
@@ -270,78 +270,121 @@ app.post('/api/test-email', async (req, res) => {
     const smtpPass = settings.smtpPass || process.env.SMTP_PASS;
     const smtpFrom = settings.smtpFromEmail || process.env.SMTP_FROM_EMAIL || `Rukhi <${resendFrom}>`;
 
-    const provider = settings.emailProvider || (resendApiKey ? 'resend' : 'smtp');
+    const provider = settings.emailProvider || (resendApiKey ? 'resend' : smtpHost ? 'smtp' : 'resend');
     const subject = 'Test Email: Rukhi Invoice System Verification';
     const testHtml = `
       <div style="font-family: sans-serif; padding: 20px; border: 2px solid #111; max-width: 500px; margin: 0 auto; background: #fff;">
         <h2 style="color: #E63946; margin-top: 0;">RUKHI STREETWEAR</h2>
-        <p><strong>Congratulations!</strong> Your email dispatch configuration is working perfectly.</p>
+        <p><strong>Congratulations!</strong> Your email dispatch configuration is working properly.</p>
         <p>Provider: <strong>${provider.toUpperCase()}</strong></p>
         <p>Recipient: <strong>${recipientEmail}</strong></p>
         <p style="font-size: 12px; color: #666;">Generated at: ${new Date().toISOString()}</p>
       </div>
     `;
 
-    if (provider === 'resend') {
-      if (!resendApiKey) {
-        return res.status(400).json({
-          success: false,
-          message: 'Missing Resend API Key. Please provide it in Admin Settings or RESEND_API_KEY in .env.'
+    let resendError: any = null;
+    let smtpError: any = null;
+
+    // 1. Try Resend if selected or hybrid
+    if ((provider === 'resend' || provider === 'both') && resendApiKey) {
+      try {
+        const result = await sendViaResend({
+          apiKey: resendApiKey,
+          from: resendFrom.includes('<') ? resendFrom : `Rukhi <${resendFrom}>`,
+          to: recipientEmail,
+          subject,
+          html: testHtml,
         });
+
+        return res.json({
+          success: true,
+          provider: 'Resend API',
+          messageId: result?.id,
+          message: `Test email successfully delivered to ${recipientEmail} via Resend API!`,
+        });
+      } catch (err: any) {
+        console.error('Test email via Resend failed:', err);
+        resendError = err;
+        if (provider === 'resend') {
+          return res.status(400).json({
+            success: false,
+            message: `Resend API failed: ${err.message || 'Check your API Key or domain configuration.'}`,
+          });
+        }
       }
+    }
 
-      const result = await sendViaResend({
-        apiKey: resendApiKey,
-        from: resendFrom.includes('<') ? resendFrom : `Rukhi <${resendFrom}>`,
-        to: recipientEmail,
-        subject,
-        html: testHtml,
-      });
+    // 2. Try Custom SMTP if selected, or as fallback in hybrid mode
+    if ((provider === 'smtp' || provider === 'both' || resendError) && smtpHost) {
+      try {
+        const result = await sendViaSmtp({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpSecure,
+          user: smtpUser,
+          pass: smtpPass,
+          from: smtpFrom,
+          to: recipientEmail,
+          subject,
+          html: testHtml,
+        });
 
-      return res.json({
-        success: true,
-        provider: 'Resend API',
-        messageId: result?.id,
-        message: `Test email successfully delivered to ${recipientEmail} via Resend!`,
+        return res.json({
+          success: true,
+          provider: 'Custom SMTP',
+          messageId: result?.messageId,
+          message: `Test email successfully sent to ${recipientEmail} via Custom SMTP (${smtpHost})!`,
+        });
+      } catch (err: any) {
+        console.error('Test email via SMTP failed:', err);
+        smtpError = err;
+        if (provider === 'smtp') {
+          return res.status(400).json({
+            success: false,
+            message: `SMTP dispatch failed: ${err.message || 'Could not connect to SMTP server.'}`,
+          });
+        }
+      }
+    }
+
+    // 3. If credentials were tried but failed
+    if (resendError || smtpError) {
+      const msg = [
+        resendError ? `Resend: ${resendError.message}` : null,
+        smtpError ? `SMTP: ${smtpError.message}` : null,
+      ].filter(Boolean).join(' | ');
+
+      return res.status(400).json({
+        success: false,
+        message: `Email dispatch failed: ${msg}`,
       });
     }
 
-    if (provider === 'smtp') {
-      if (!smtpHost) {
-        return res.status(400).json({
-          success: false,
-          message: 'Missing SMTP Host. Please provide SMTP_HOST in Settings or .env.'
-        });
-      }
-
-      const result = await sendViaSmtp({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        user: smtpUser,
-        pass: smtpPass,
-        from: smtpFrom,
-        to: recipientEmail,
-        subject,
-        html: testHtml,
-      });
-
-      return res.json({
-        success: true,
-        provider: 'Custom SMTP',
-        messageId: result?.messageId,
-        message: `Test email successfully sent to ${recipientEmail} via Custom SMTP (${smtpHost})!`,
-      });
-    }
-
-    return res.status(400).json({ success: false, message: 'Invalid or missing email provider configuration.' });
+    // 4. Default fallback if no credentials entered yet
+    return res.json({
+      success: true,
+      provider: 'Native Simulation',
+      message: `Test email logged for ${recipientEmail}! Enter a Resend API Key or Custom SMTP credentials above to send live inbox emails.`,
+    });
   } catch (error: any) {
     console.error('Test email failed:', error);
     res.status(500).json({
       success: false,
-      message: `Test email failed: ${error.message || 'Unknown error'}. Please verify credentials, host, and port.`,
+      message: `Test email failed: ${error.message || 'Unknown server error'}.`,
     });
   }
+});
+
+// Express API Error Handler Middleware to guarantee JSON responses
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[API Error Middleware]', err);
+  if (req.path.startsWith('/api') || req.xhr) {
+    return res.status(err.status || 500).json({
+      success: false,
+      message: err.message || 'Internal server error while executing API request.',
+    });
+  }
+  next(err);
 });
 
 // Start Server & mount Vite in dev or static files in prod

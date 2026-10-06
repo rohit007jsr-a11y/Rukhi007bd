@@ -27,6 +27,7 @@ import { WhatsAppButton } from './components/WhatsAppButton';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { CategoryDetailPage } from './pages/CategoryDetailPage';
 import { TermsPage } from './pages/TermsPage';
+import { SEOHead } from './components/SEOHead';
 
 export default function StoreApp() {
   // Language State - default 'en'
@@ -340,6 +341,13 @@ export default function StoreApp() {
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#111111] flex flex-col font-sans">
+      <SEOHead
+        title={lang === 'en' ? 'Rukhi - Streetwear & Fashion Online Store Bangladesh' : 'রুখি - স্ট্রিটওয়্যার ও ফ্যাশন অনলাইন শপ বাংলাদেশ'}
+        description={lang === 'en' 
+          ? 'Shop premium streetwear, heavy cotton hoodies, graphic tees, and denim in Bangladesh. 100% Cash-on-Delivery with doorstep parcel inspection before payment.'
+          : 'ক্যাশ অন ডেলিভারিতে বাংলাদেশের প্রিমিয়াম স্ট্রিটওয়্যার পোশাক অনলাইনে শপ করুন। পার্সেল দেখে পেমেন্ট করার সুবিধা।'}
+        lang={lang}
+      />
       
       {/* Navbar */}
       <Navbar

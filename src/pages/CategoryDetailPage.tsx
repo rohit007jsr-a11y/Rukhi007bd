@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Language, Product } from '../types';
 import { getCategoryDetails, CATEGORIES_DATA } from '../data/categories';
+import { SEOHead } from '../components/SEOHead';
 
 interface CategoryDetailPageProps {
   lang: Language;
@@ -103,6 +104,14 @@ export const CategoryDetailPage: React.FC<CategoryDetailPageProps> = ({
 
   return (
     <div className="min-h-screen bg-[#F7F7F5] pb-24">
+      <SEOHead
+        title={`${lang === 'en' ? categoryInfo.nameEn : categoryInfo.nameBn} Collection - Rukhi Bangladesh`}
+        description={lang === 'en' ? categoryInfo.descEn : categoryInfo.descBn}
+        keywords={`Rukhi ${categoryInfo.nameEn}, ${categoryInfo.nameEn} Bangladesh, ${categoryInfo.nameEn} price Dhaka, cash on delivery ${categoryInfo.nameEn}`}
+        image={categoryInfo.heroImage}
+        category={categoryInfo.nameEn}
+        lang={lang}
+      />
       
       {/* Department Hero Banner */}
       <section className="relative bg-[#111111] text-white pt-8 pb-14 sm:pb-20 border-b-4 border-[#E63946] overflow-hidden">

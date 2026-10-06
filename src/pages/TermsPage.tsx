@@ -5,6 +5,7 @@ import {
   CheckCircle2, AlertTriangle, Printer, ExternalLink, HelpCircle 
 } from 'lucide-react';
 import { Language } from '../types';
+import { SEOHead } from '../components/SEOHead';
 
 interface TermsPageProps {
   lang: Language;
@@ -50,6 +51,12 @@ export const TermsPage: React.FC<TermsPageProps> = ({
 
   return (
     <div className="min-h-screen bg-[#F7F7F5] pb-24">
+      <SEOHead
+        title={lang === 'en' ? 'Terms & Conditions, COD & Return Policies - Rukhi Bangladesh' : 'ব্যবহারের শর্তাবলী ও নীতি - রুখি বাংলাদেশ'}
+        description={lang === 'en' ? 'Official store terms of service, 100% cash on delivery policy, 7-day return guarantee, and shipping guidelines for Rukhi Bangladesh.' : 'রুখি বাংলাদেশের অফিসিয়াল শর্তাবলী, ক্যাশ অন ডেলিভারি ও রিটার্ন নীতিমালার বিস্তারিত।'}
+        keywords="Rukhi policies, cash on delivery terms BD, return policy streetwear Dhaka, terms of service Rukhi"
+        lang={lang}
+      />
       
       {/* Editorial Header */}
       <section className="bg-[#111111] text-white pt-10 pb-14 border-b-4 border-[#E63946] relative">

@@ -90,27 +90,34 @@ export async function sendOrderInvoice(
       }),
     });
 
-    if (response.ok) {
-      const data = await response.json();
+    const responseText = await response.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.warn('Backend /api/send-invoice returned non-JSON response:', responseText);
+      data = {
+        success: false,
+        message: responseText && responseText.length < 200 
+          ? responseText 
+          : `Server returned non-JSON response (Status ${response.status}).`
+      };
+    }
+
+    if (response.ok && data.success) {
       return {
-        success: data.success,
+        success: true,
         message: data.message || 'Invoice sent successfully!',
         provider: data.provider,
         messageId: data.messageId,
         invoiceHtml: htmlContent,
       };
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      console.warn('Backend API returned non-OK status:', errorData);
-      
-      // If backend responded with specific message, we can return it or attempt Supabase edge function
-      if (errorData.message && !errorData.canFallback) {
-        return {
-          success: false,
-          message: errorData.message,
-          invoiceHtml: htmlContent,
-        };
-      }
+    } else if (data.message) {
+      return {
+        success: false,
+        message: data.message,
+        invoiceHtml: htmlContent,
+      };
     }
   } catch (fetchErr) {
     console.warn('Could not connect to /api/send-invoice:', fetchErr);
@@ -197,10 +204,23 @@ export async function testEmailConnection(
       }),
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.warn('Backend /api/test-email returned non-JSON response:', responseText);
+      return {
+        success: false,
+        message: responseText && responseText.length < 200 
+          ? responseText 
+          : `Server returned non-JSON response (Status ${response.status} ${response.statusText}). Please check server logs.`,
+      };
+    }
+
     return {
-      success: data.success,
-      message: data.message,
+      success: Boolean(data.success),
+      message: data.message || (data.success ? 'Test email dispatched successfully!' : 'Email test failed.'),
       provider: data.provider,
       messageId: data.messageId,
     };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ShoppingBag, ShieldCheck, CheckCircle2, Truck, RefreshCw } from 'lucide-react';
 import { Language, Product } from '../types';
 import { translations } from '../translations';
+import { SEOHead } from './SEOHead';
 
 interface ProductQuickViewProps {
   product: Product | null;
@@ -26,6 +27,9 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
   const headingFontClass = lang === 'en' ? 'font-heading-en' : 'font-heading-bn';
   const bodyFontClass = lang === 'en' ? 'font-body-en' : 'font-body-bn';
 
+  const productName = lang === 'en' ? product.nameEn : product.nameBn;
+  const productDesc = lang === 'en' ? product.descriptionEn : product.descriptionBn;
+
   const handleAdd = () => {
     onAddToCart(product, selectedSize, quantity);
     setAdded(true);
@@ -37,6 +41,17 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+      <SEOHead
+        title={`${productName} - Rukhi Bangladesh`}
+        description={productDesc || `Buy ${productName} online at Rukhi Bangladesh. Price: ৳${product.priceEn}. 100% Cash on Delivery.`}
+        image={product.image}
+        type="product"
+        price={product.priceEn}
+        currency="BDT"
+        category={product.categoryEn || 'Streetwear'}
+        lang={lang}
+      />
+
       <div className="bg-white rounded-2xl border-2 border-[#111111] max-w-3xl w-full shadow-[6px_6px_0px_#111111] sm:shadow-[10px_10px_0px_#111111] overflow-hidden relative max-h-[92vh] sm:max-h-[90vh] flex flex-col md:grid md:grid-cols-2">
         
         {/* Close Button */}

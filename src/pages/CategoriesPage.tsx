@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Shirt, Tv, Utensils, Sparkles, ShoppingBasket, Smartphone, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
 import { Language, Product } from '../types';
 import { CATEGORIES_DATA } from '../data/categories';
+import { SEOHead } from '../components/SEOHead';
 
 interface CategoriesPageProps {
   lang: Language;
@@ -31,6 +32,12 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
 
   return (
     <div className="min-h-screen bg-[#F7F7F5] pb-20">
+      <SEOHead
+        title={lang === 'en' ? 'Shop by Category & Department - Rukhi Bangladesh' : 'ক্যাটাগরি অনুযায়ী কেনাকাটা - রুখি বাংলাদেশ'}
+        description={lang === 'en' ? 'Explore all streetwear, fashion, hoodies, tees, and apparel categories at Rukhi Bangladesh. 100% Cash-on-Delivery nationwide.' : 'রুখির সকল ক্যাটাগরির স্ট্রিটওয়্যার পোশাক ক্যাশ অন ডেলিভারিতে শপ করুন।'}
+        keywords="Rukhi categories, streetwear apparel BD, hoodies Dhaka, oversized t-shirts BD, fashion categories Bangladesh"
+        lang={lang}
+      />
       
       {/* Editorial Category Header */}
       <section className="bg-[#111111] text-white pt-10 pb-16 sm:pb-20 border-b-4 border-[#E63946] relative overflow-hidden">
