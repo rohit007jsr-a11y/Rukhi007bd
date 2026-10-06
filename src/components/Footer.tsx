@@ -5,12 +5,18 @@ import { translations } from '../translations';
 
 interface FooterProps {
   lang: Language;
+  storeSettings?: Record<string, any>;
+  onOpenPolicy?: (type: 'cod' | 'return' | 'size' | 'track') => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ lang }) => {
+export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Record<string, any>, onOpenPolicy }) => {
   const t = translations[lang].footer;
   const headingFontClass = lang === 'en' ? 'font-heading-en' : 'font-heading-bn';
   const bodyFontClass = lang === 'en' ? 'font-body-en' : 'font-body-bn';
+
+  const addressText = storeSettings?.address || t.address;
+  const phoneText = storeSettings?.contactPhone || t.phone;
+  const emailText = storeSettings?.contactEmail || t.email;
 
   return (
     <footer className="bg-[#111111] text-white pt-16 pb-12 border-t-4 border-[#E63946]">
@@ -106,24 +112,36 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
             </h3>
             <ul className={`space-y-2.5 text-sm text-gray-300 ${bodyFontClass}`}>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => onOpenPolicy?.('cod')}
+                  className="hover:text-white transition-colors cursor-pointer text-left"
+                >
                   {lang === 'en' ? 'COD Policy' : 'ক্যাশ অন ডেলিভারি নীতি'}
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => onOpenPolicy?.('return')}
+                  className="hover:text-white transition-colors cursor-pointer text-left"
+                >
                   {lang === 'en' ? '7-Day Return Policy' : '৭ দিনের রিটার্ন নীতি'}
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => onOpenPolicy?.('size')}
+                  className="hover:text-white transition-colors cursor-pointer text-left"
+                >
                   {lang === 'en' ? 'Size Guide' : 'সাইজ গাইড'}
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => onOpenPolicy?.('track')}
+                  className="hover:text-white transition-colors cursor-pointer text-left"
+                >
                   {lang === 'en' ? 'Track Order' : 'অর্ডার ট্র্যাক করুন'}
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -136,15 +154,15 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
             <ul className={`space-y-3 text-xs text-gray-300 ${bodyFontClass}`}>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-[#E63946] shrink-0 mt-0.5" />
-                <span>{t.address}</span>
+                <span>{addressText}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#E63946] shrink-0" />
-                <span>{t.phone}</span>
+                <span>{phoneText}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#E63946] shrink-0" />
-                <span>{t.email}</span>
+                <span>{emailText}</span>
               </li>
             </ul>
           </div>

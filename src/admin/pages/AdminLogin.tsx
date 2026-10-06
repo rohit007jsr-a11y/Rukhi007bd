@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../utils/supabase';
+import { formatAuthError } from '../../utils/authErrors';
 
 export const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -19,11 +20,9 @@ export const AdminLogin: React.FC = () => {
       });
 
       if (signInErr) throw signInErr;
-
-      // Ensure they have the admin role, but App.tsx will handle the routing once the session is set and role is fetched
-      // We can just trigger a reload to ensure App.tsx checks role fresh if needed, but onAuthStateChange should catch it.
     } catch (err: any) {
-      setError(err.message || 'Failed to login');
+      console.error('Admin login error:', err);
+      setError(formatAuthError(err, 'Failed to authenticate admin credentials.'));
     } finally {
       setLoading(false);
     }
@@ -35,7 +34,7 @@ export const AdminLogin: React.FC = () => {
         <h1 className="text-3xl font-heading-en uppercase mb-6 text-center text-rukhi-black">Admin Login</h1>
         
         {error && (
-          <div className="bg-red-50 text-rukhi-accent border border-rukhi-accent p-3 mb-6 font-body-en">
+          <div className="bg-red-50 text-rukhi-accent border border-rukhi-accent p-3 mb-6 font-body-en text-xs font-bold leading-relaxed">
             {error}
           </div>
         )}
@@ -46,7 +45,7 @@ export const AdminLogin: React.FC = () => {
             <input 
               type="email" 
               required
-              className="w-full border-2 border-rukhi-black p-3 focus:outline-none focus:border-rukhi-accent transition-colors"
+              className="w-full border-2 border-rukhi-black p-3 focus:outline-none focus:border-rukhi-accent transition-colors text-sm"
               value={email}
               onChange={e => setEmail(e.target.value)}
             />
@@ -56,7 +55,7 @@ export const AdminLogin: React.FC = () => {
             <input 
               type="password" 
               required
-              className="w-full border-2 border-rukhi-black p-3 focus:outline-none focus:border-rukhi-accent transition-colors"
+              className="w-full border-2 border-rukhi-black p-3 focus:outline-none focus:border-rukhi-accent transition-colors text-sm"
               value={password}
               onChange={e => setPassword(e.target.value)}
             />
@@ -64,7 +63,7 @@ export const AdminLogin: React.FC = () => {
           <button 
             type="submit"
             disabled={loading}
-            className="w-full bg-rukhi-black text-white p-4 font-bold font-heading-en uppercase hover:bg-rukhi-accent transition-colors shadow-[4px_4px_0px_#E63946] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50"
+            className="w-full bg-rukhi-black text-white p-4 font-bold font-heading-en uppercase hover:bg-rukhi-accent transition-colors shadow-[4px_4px_0px_#E63946] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>

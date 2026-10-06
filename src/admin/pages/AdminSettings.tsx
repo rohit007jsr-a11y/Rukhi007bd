@@ -8,13 +8,22 @@ export const AdminSettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     storeName: 'Rukhi Bangladesh',
-    contactPhone: '+8801712345678',
-    contactEmail: 'support@rukhi.com',
+    contactPhone: '+8801700998877',
+    contactEmail: 'hello@rukhibd.com',
+    address: 'House 42, Road 11, Banani, Dhaka-1213, Bangladesh',
     codMessage: 'Check your product at the time of delivery before paying the delivery rider.',
     standardDelivery: '80',
     outsideDelivery: '130',
     freeDeliveryThreshold: '2500',
     enableNotifications: true,
+    // Store Documents & Policies
+    codPolicy: '1. 100% Cash on Delivery across Bangladesh.\n2. Customers MUST inspect parcel contents before making payment to the delivery rider.\n3. If you find damaged or incorrect products, return instantly to the rider without paying.\n4. Standard delivery inside Dhaka: 1-2 business days. Outside Dhaka: 2-4 business days.',
+    returnPolicy: '1. 7-day hassle-free return or exchange for unworn, unwashed items with tags intact.\n2. Contact our support team via phone (+8801700998877) or email (hello@rukhibd.com).\n3. Return shipping cost is covered by Rukhi if the product was damaged or defective.',
+    sizeGuide: 'Standard Size Chart:\nSmall (S): Chest 36", Length 27"\nMedium (M): Chest 38", Length 28"\nLarge (L): Chest 40", Length 29"\nExtra Large (XL): Chest 42", Length 30"\nDouble XL (XXL): Chest 44", Length 31"',
+    trackOrderInfo: 'Enter your phone number or Order ID in the Track Order modal to see live status updates. For urgent delivery inquiries, call our helpline (+8801700998877).',
+    facebookUrl: 'https://facebook.com',
+    instagramUrl: 'https://instagram.com',
+    youtubeUrl: 'https://youtube.com',
   });
 
   useEffect(() => {
@@ -123,6 +132,71 @@ export const AdminSettings: React.FC = () => {
                 value={formData.contactEmail}
                 onChange={e => setFormData({ ...formData, contactEmail: e.target.value })}
                 className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-bold uppercase mb-1">Physical Store Address</label>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section: Store Legal Policies & Documents */}
+        <div className="bg-white border-2 border-rukhi-black p-6 shadow-[6px_6px_0px_#111111] space-y-4">
+          <h2 className="text-xl font-heading-en uppercase border-b-2 border-rukhi-black pb-2 flex items-center gap-2">
+            <HelpCircle size={20} className="text-rukhi-accent" /> Store Documents & Policies
+          </h2>
+          <p className="text-xs text-gray-600 font-medium">
+            Fill these document sections. When saved, these will instantly update on the live website policies & customer care links.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold uppercase mb-1">Cash On Delivery (COD) Policy Document</label>
+              <textarea
+                rows={4}
+                value={formData.codPolicy}
+                onChange={e => setFormData({ ...formData, codPolicy: e.target.value })}
+                placeholder="Enter full COD terms..."
+                className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent font-sans text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold uppercase mb-1">7-Day Return Policy Document</label>
+              <textarea
+                rows={4}
+                value={formData.returnPolicy}
+                onChange={e => setFormData({ ...formData, returnPolicy: e.target.value })}
+                placeholder="Enter return and exchange terms..."
+                className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent font-sans text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold uppercase mb-1">Size Guide & Measurement Information</label>
+              <textarea
+                rows={4}
+                value={formData.sizeGuide}
+                onChange={e => setFormData({ ...formData, sizeGuide: e.target.value })}
+                placeholder="Enter sizing details..."
+                className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent font-sans text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold uppercase mb-1">Track Order Guidance</label>
+              <textarea
+                rows={3}
+                value={formData.trackOrderInfo}
+                onChange={e => setFormData({ ...formData, trackOrderInfo: e.target.value })}
+                placeholder="Enter tracking instructions..."
+                className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent font-sans text-sm"
               />
             </div>
           </div>

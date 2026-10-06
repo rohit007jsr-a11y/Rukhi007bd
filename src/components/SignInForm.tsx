@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Loader2, UserPlus } from 'lucide-react';
+import { Mail, Loader2, UserPlus, AlertCircle, LogIn } from 'lucide-react';
 import { PasswordInput } from './PasswordInput';
-import { supabase, isSupabaseConfigured } from '../utils/supabase';
+import { supabase } from '../utils/supabase';
+import { formatAuthError } from '../utils/authErrors';
 
 interface SignInFormProps {
   onSuccess: (user: { email: string; name?: string; phone?: string; address?: string }) => void;
@@ -25,7 +26,8 @@ export const SignInForm: React.FC<SignInFormProps> = ({
     setError(null);
     setIsNotFound(false);
 
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email.trim())) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !/\S+@\S+\.\S+/.test(cleanEmail)) {
       setError('Please enter a valid email address.');
       return;
     }
@@ -39,27 +41,21 @@ export const SignInForm: React.FC<SignInFormProps> = ({
 
     try {
       const { data, error: signInErr } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
       if (signInErr) {
-        const errMsg = signInErr.message.toLowerCase();
-        if (errMsg.includes('email not confirmed')) {
-          setError('Please verify your email address before signing in.');
-        } else if (errMsg.includes('invalid login credentials')) {
-          setError('Invalid email or password. Please try again.');
-        } else if (errMsg.includes('user not found')) {
+        const errMsg = signInErr.message?.toLowerCase() || '';
+        if (errMsg.includes('user not found') || errMsg.includes('invalid login credentials')) {
           setIsNotFound(true);
-          setError('Account not found. Please create a new account to continue.');
-        } else {
-          setError(signInErr.message);
         }
+        setError(formatAuthError(signInErr, 'Invalid email or password.'));
         return;
       }
 
       const userObj = data.user;
-      let userName = userObj?.user_metadata?.username || userObj?.user_metadata?.full_name || email.trim().split('@')[0];
+      let userName = userObj?.user_metadata?.username || userObj?.user_metadata?.full_name || cleanEmail.split('@')[0];
       let phone = userObj?.user_metadata?.phone;
       let address = userObj?.user_metadata?.address;
 
@@ -77,18 +73,19 @@ export const SignInForm: React.FC<SignInFormProps> = ({
             address = profileData.address || address;
           }
         } catch (err) {
-          console.log('Failed to fetch profile during sign in', err);
+          console.log('Profile fetch note:', err);
         }
       }
 
       onSuccess({
-        email: email.trim(),
+        email: cleanEmail,
         name: userName,
         phone,
         address,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please try again.');
+      console.error('Sign in error:', err);
+      setError(formatAuthError(err, 'Failed to sign in. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -97,8 +94,9 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   return (
     <div className="w-full space-y-4">
       <div className="border-b-2 border-[#111111] pb-3">
-        <h2 className="text-xl font-black uppercase text-[#111111] font-heading-en">
-          Sign In
+        <h2 className="text-xl font-black uppercase text-[#111111] font-heading-en flex items-center gap-2">
+          <LogIn className="w-5 h-5 text-[#E63946]" />
+          <span>Sign In</span>
         </h2>
         <p className="text-xs text-gray-600 font-medium mt-0.5">
           Access your RUKHI orders and account profile
@@ -106,17 +104,22 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border-2 border-[#E63946] rounded-lg text-xs font-bold text-[#E63946] space-y-2">
-          <p>{error}</p>
+        <div className="p-3 bg-red-50 border-2 border-[#E63946] rounded-lg text-xs font-bold text-[#E63946] space-y-2 leading-relaxed">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
           {isNotFound && (
-            <button
-              type="button"
-              onClick={onSwitchToRegister}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white text-xs font-bold rounded hover:bg-[#E63946] transition-colors cursor-pointer"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Create Account Now</span>
-            </button>
+            <div className="pt-1 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onSwitchToRegister}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-white text-xs font-bold rounded hover:bg-[#E63946] transition-colors cursor-pointer shadow-sm"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Create Account Instead</span>
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -127,7 +130,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
             Email Address <span className="text-[#E63946]">*</span>
           </label>
           <div className="relative">
-            <Mail className="w-4 h-4 absolute left-3 top-3 text-gray-400 pointer-events-none" />
+            <Mail className="w-4 h-4 absolute left-3 top-3.5 text-gray-400 pointer-events-none" />
             <input
               type="email"
               value={email}
@@ -180,3 +183,4 @@ export const SignInForm: React.FC<SignInFormProps> = ({
     </div>
   );
 };
+

@@ -21,6 +21,7 @@ import { ProductQuickView } from './components/ProductQuickView';
 import { SearchModal } from './components/SearchModal';
 import { LookbookModal } from './components/LookbookModal';
 import { AuthModal } from './components/AuthModal';
+import { PolicyModal } from './components/PolicyModal';
 import { WhatsAppButton } from './components/WhatsAppButton';
 
 export default function StoreApp() {
@@ -28,8 +29,47 @@ export default function StoreApp() {
   const [lang, setLang] = useState<Language>('en');
   
   // Dynamic Products and Settings
-  const [products, setProducts] = useState<Product[]>(localProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [storeSettings, setStoreSettings] = useState<any>({});
+
+  // Policy Modal state
+  const [policyModal, setPolicyModal] = useState<{
+    isOpen: boolean;
+    type: 'cod' | 'return' | 'size' | 'track' | null;
+    title: string;
+    content: string;
+  }>({
+    isOpen: false,
+    type: null,
+    title: '',
+    content: '',
+  });
+
+  const handleOpenPolicy = (type: 'cod' | 'return' | 'size' | 'track') => {
+    let title = '';
+    let content = '';
+
+    switch (type) {
+      case 'cod':
+        title = lang === 'en' ? 'Cash On Delivery Policy' : 'ক্যাশ অন ডেলিভারি নীতি';
+        content = storeSettings.codPolicy || storeSettings.codMessage || '1. 100% Cash on Delivery across Bangladesh.\n2. Inspect parcel before payment.\n3. Return instantly if damaged or incorrect.';
+        break;
+      case 'return':
+        title = lang === 'en' ? '7-Day Return Policy' : '৭ দিনের রিটার্ন নীতি';
+        content = storeSettings.returnPolicy || '1. 7-day return or exchange for unworn items with tags.\n2. Contact support at ' + (storeSettings.contactPhone || '+8801700998877') + ' or ' + (storeSettings.contactEmail || 'hello@rukhibd.com') + '.';
+        break;
+      case 'size':
+        title = lang === 'en' ? 'Size Guide' : 'সাইজ গাইড';
+        content = storeSettings.sizeGuide || 'Standard Apparel Measurements:\nS: Chest 36"\nM: Chest 38"\nL: Chest 40"\nXL: Chest 42"\nXXL: Chest 44"';
+        break;
+      case 'track':
+        title = lang === 'en' ? 'Track Order Guidance' : 'অর্ডার ট্র্যাকিং গাইড';
+        content = storeSettings.trackOrderInfo || 'Provide your order ID or phone number to check your shipment status or call helpline (' + (storeSettings.contactPhone || '+8801700998877') + ').';
+        break;
+    }
+
+    setPolicyModal({ isOpen: true, type, title, content });
+  };
 
   // User Auth State
   const [currentUser, setCurrentUser] = useState<{ email: string; name?: string; phone?: string; address?: string } | null>(null);
@@ -52,7 +92,7 @@ export default function StoreApp() {
           .select('*')
           .neq('status', 'deleted');
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const settingsProduct = data.find(p => p.name === 'SYSTEM_SETTINGS');
           if (settingsProduct && settingsProduct.description) {
             try {
@@ -60,49 +100,38 @@ export default function StoreApp() {
             } catch(e) {}
           }
           
-          const dbProducts = data.filter(p => p.name !== 'SYSTEM_SETTINGS').map((p: any) => ({
-            id: p.id.toString(),
-            nameEn: p.nameEn ?? p.name ?? '',
-            nameBn: p.nameBn ?? p.name ?? '',
-            categoryEn: p.category ?? 'fashion',
-            categoryBn: p.category ?? 'fashion',
-            priceEn: p.priceEn ?? p.price ?? 0,
-            priceBn: (p.priceEn ?? p.price ?? 0).toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]),
-            originalPriceEn: p.original_price ?? undefined,
-            originalPriceBn: p.original_price ? p.original_price.toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]) : undefined,
-            descriptionEn: p.descriptionEn ?? p.description ?? '',
-            descriptionBn: p.descriptionBn ?? p.description ?? '',
-            image: p.image_url ?? p.image ?? '',
-            images: p.images ?? (p.image_url ? [p.image_url] : []),
-            sizes: ['S', 'M', 'L', 'XL'],
-            badge: p.badge || (p.cod_available !== false ? 'COD Available' : ''),
-            isNew: p.is_featured ?? false,
-            stock: p.stock_qty ?? p.stock ?? 10
-          }));
+          const dbProducts = data
+            .filter(p => p.name !== 'SYSTEM_SETTINGS' && p.status !== 'hidden')
+            .map((p: any) => ({
+              id: p.id.toString(),
+              nameEn: p.nameEn ?? p.name ?? '',
+              nameBn: p.nameBn ?? p.name ?? '',
+              categoryEn: p.category ?? 'fashion',
+              categoryBn: p.category ?? 'fashion',
+              priceEn: Number(p.priceEn ?? p.price ?? 0),
+              priceBn: (p.priceEn ?? p.price ?? 0).toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]),
+              originalPriceEn: p.original_price ? Number(p.original_price) : undefined,
+              originalPriceBn: p.original_price ? p.original_price.toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]) : undefined,
+              descriptionEn: p.descriptionEn ?? p.description ?? '',
+              descriptionBn: p.descriptionBn ?? p.description ?? '',
+              image: p.image_url ?? p.image ?? 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
+              images: p.images ?? (p.image_url ? [p.image_url] : []),
+              sizes: ['S', 'M', 'L', 'XL'],
+              badge: p.badge || (p.cod_available !== false ? 'COD Available' : ''),
+              badgeEn: p.badge || 'COD Available',
+              badgeBn: p.badge || 'ক্যাশ অন ডেলিভারি',
+              isNew: p.is_featured ?? false,
+              stock: p.stock_qty ?? p.stock ?? 10
+            }));
           
-          if (dbProducts.length > 0) {
-            setProducts(dbProducts);
-            if (cartItems.length === 0) {
-              setCartItems([
-                { product: dbProducts[0], size: 'L', quantity: 1 },
-                { product: dbProducts[1] || dbProducts[0], size: '32', quantity: 1 },
-              ]);
-            }
-          } else {
-             if (cartItems.length === 0) {
-              setCartItems([
-                { product: localProducts[0], size: 'L', quantity: 1 },
-                { product: localProducts[1], size: '32', quantity: 1 },
-              ]);
-            }
-          }
-        } else {
-           if (cartItems.length === 0) {
-             setCartItems([
-              { product: localProducts[0], size: 'L', quantity: 1 },
-              { product: localProducts[1], size: '32', quantity: 1 },
+          setProducts(dbProducts);
+
+          if (dbProducts.length > 0 && cartItems.length === 0) {
+            setCartItems([
+              { product: dbProducts[0], size: 'L', quantity: 1 },
+              { product: dbProducts[1] || dbProducts[0], size: '32', quantity: 1 },
             ]);
-           }
+          }
         }
       } catch (err) {
         console.error('Failed to load dynamic data:', err);
@@ -305,7 +334,21 @@ export default function StoreApp() {
       </main>
 
       {/* Footer */}
-      <Footer lang={lang} />
+      <Footer
+        lang={lang}
+        storeSettings={storeSettings}
+        onOpenPolicy={handleOpenPolicy}
+      />
+
+      {/* Policy Document Modal */}
+      <PolicyModal
+        isOpen={policyModal.isOpen}
+        onClose={() => setPolicyModal({ ...policyModal, isOpen: false })}
+        title={policyModal.title}
+        type={policyModal.type}
+        content={policyModal.content}
+        lang={lang}
+      />
 
       {/* Cart Slide-Over Drawer */}
       <CartDrawer

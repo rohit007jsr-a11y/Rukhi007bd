@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Mail, CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
+import { X, Mail, CheckCircle2, Loader2, ArrowLeft, KeyRound, Lock, Send } from 'lucide-react';
 import { PasswordInput } from './PasswordInput';
-import { supabase, isSupabaseConfigured } from '../utils/supabase';
+import { supabase } from '../utils/supabase';
+import { formatAuthError } from '../utils/authErrors';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -26,13 +27,14 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  // Step 1: Send OTP / Reset Code
+  // Step 1: Send Password Reset Link / OTP
   const handleSendResetCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfoMessage(null);
 
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email.trim())) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !/\S+@\S+\.\S+/.test(cleanEmail)) {
       setError('Please enter a valid email address.');
       return;
     }
@@ -40,16 +42,30 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     setLoading(true);
 
     try {
-      const { error: resetErr } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
+      // 1. Try sending official Supabase reset password email
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: window.location.origin,
       });
 
-      if (resetErr) throw resetErr;
+      if (resetErr) {
+        // Fallback to signInWithOtp if OTP template is configured instead of recovery link
+        const { error: otpErr } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            shouldCreateUser: false,
+          },
+        });
 
-      setInfoMessage('Verification code sent to your email');
+        if (otpErr) {
+          throw resetErr || otpErr;
+        }
+      }
+
+      setInfoMessage(`Password reset code/link sent to ${cleanEmail}. Check your inbox!`);
       setStep(2);
     } catch (err: any) {
-      setError(err.message || 'Failed to send reset code. Please check your email.');
+      console.error('Password reset error:', err);
+      setError(formatAuthError(err, 'Failed to send reset code. Please check that the email address is registered.'));
     } finally {
       setLoading(false);
     }
@@ -60,25 +76,39 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     e.preventDefault();
     setError(null);
 
-    if (!otpToken.trim() || otpToken.trim().length < 6) {
-      setError('Please enter a valid 6-digit code.');
+    const cleanToken = otpToken.trim();
+    if (!cleanToken || cleanToken.length < 6) {
+      setError('Please enter the full 6-digit verification code.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const { error: verifyErr } = await supabase.auth.verifyOtp({
+      // Try 'recovery' type first
+      let { error: verifyErr } = await supabase.auth.verifyOtp({
         email: email.trim(),
-        token: otpToken.trim(),
-        type: 'email',
+        token: cleanToken,
+        type: 'recovery',
       });
 
-      if (verifyErr) throw verifyErr;
+      // If recovery type is not matching, try 'email' type
+      if (verifyErr) {
+        const { error: fallbackErr } = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: cleanToken,
+          type: 'email',
+        });
+        if (fallbackErr) {
+          throw verifyErr || fallbackErr;
+        }
+      }
 
+      setInfoMessage('Code verified successfully! Please enter your new password.');
       setStep(3);
     } catch (err: any) {
-      setError(err.message || 'Invalid or expired code. Please try again.');
+      console.error('OTP verification error:', err);
+      setError(formatAuthError(err, 'Invalid or expired verification code. Please check the code and try again.'));
     } finally {
       setLoading(false);
     }
@@ -108,13 +138,29 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
       if (updateErr) throw updateErr;
 
-      setInfoMessage('Password updated successfully!');
+      setInfoMessage('Password updated successfully! Redirecting...');
       setTimeout(() => {
         onSuccess();
         onClose();
-      }, 1500);
+      }, 1200);
     } catch (err: any) {
-      setError(err.message || 'Failed to update password.');
+      console.error('Update password error:', err);
+      setError(formatAuthError(err, 'Failed to update password. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin,
+      });
+      setInfoMessage(`A fresh reset code was sent to ${email.trim()}`);
+    } catch (err: any) {
+      setError(formatAuthError(err, 'Could not resend reset code.'));
     } finally {
       setLoading(false);
     }
@@ -127,6 +173,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         {/* Header */}
         <div className="p-4 bg-[#F7F7F5] border-b-2 border-[#111111] flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-[#E63946]" />
             <h2 className="text-lg font-black uppercase text-[#111111] font-heading-en">
               Reset Your Password
             </h2>
@@ -148,7 +195,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
           )}
 
           {error && (
-            <div className="p-3 bg-red-50 border-2 border-[#E63946] rounded-lg text-xs font-bold text-[#E63946]">
+            <div className="p-3 bg-red-50 border-2 border-[#E63946] rounded-lg text-xs font-bold text-[#E63946] leading-relaxed">
               {error}
             </div>
           )}
@@ -165,7 +212,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                   Email Address <span className="text-[#E63946]">*</span>
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3 top-3 text-gray-400 pointer-events-none" />
+                  <Mail className="w-4 h-4 absolute left-3 top-3.5 text-gray-400 pointer-events-none" />
                   <input
                     type="email"
                     value={email}
@@ -182,7 +229,12 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 disabled={loading}
                 className="w-full py-3 bg-[#111111] hover:bg-[#E63946] text-white font-extrabold text-xs uppercase tracking-wider rounded-lg border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Reset Code'}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Send Reset Code</span>
+                  </>
+                )}
               </button>
             </form>
           )}
@@ -207,15 +259,18 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 <label className="block text-xs font-bold uppercase text-[#111111] mb-1">
                   6-Digit Verification Code <span className="text-[#E63946]">*</span>
                 </label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={otpToken}
-                  onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ''))}
-                  placeholder="123456"
-                  required
-                  className="w-full text-center tracking-widest font-mono text-base py-2.5 bg-white border-2 border-[#111111] rounded-lg focus:outline-none focus:border-[#E63946] font-bold"
-                />
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 absolute left-3 top-3.5 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={otpToken}
+                    onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ''))}
+                    placeholder="123456"
+                    required
+                    className="w-full text-center tracking-widest font-mono text-base py-2.5 bg-white border-2 border-[#111111] rounded-lg focus:outline-none focus:border-[#E63946] font-bold"
+                  />
+                </div>
               </div>
 
               <button
@@ -223,8 +278,19 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 disabled={loading}
                 className="w-full py-3 bg-[#111111] hover:bg-[#E63946] text-white font-extrabold text-xs uppercase tracking-wider rounded-lg border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify Code'}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify Code & Set Password'}
               </button>
+
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={loading}
+                  className="text-xs font-bold text-gray-600 hover:text-[#E63946] underline cursor-pointer"
+                >
+                  Didn&apos;t get a code? Resend
+                </button>
+              </div>
             </form>
           )}
 
@@ -256,7 +322,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 disabled={loading}
                 className="w-full py-3 bg-[#111111] hover:bg-[#E63946] text-white font-extrabold text-xs uppercase tracking-wider rounded-lg border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] hover:shadow-[2px_2px_0px_#111111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Password'}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save New Password'}
               </button>
             </form>
           )}
@@ -266,3 +332,4 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     </div>
   );
 };
+

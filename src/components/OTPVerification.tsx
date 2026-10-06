@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { KeyRound, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { KeyRound, Loader2, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { formatAuthError } from '../utils/authErrors';
 
 interface OTPVerificationProps {
   email: string;
@@ -34,7 +35,11 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
       setLocalError('Please enter a valid 6-digit verification code.');
       return;
     }
-    await onVerify(otp.trim());
+    try {
+      await onVerify(otp.trim());
+    } catch (err: any) {
+      setLocalError(formatAuthError(err, 'Invalid or expired verification code.'));
+    }
   };
 
   const handleResendClick = async () => {
@@ -46,11 +51,13 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
       setResendSuccess(true);
       setTimeout(() => setResendSuccess(false), 5000);
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to resend code');
+      setLocalError(formatAuthError(err, 'Failed to resend code. Please wait a minute before retrying.'));
     } finally {
       setResending(false);
     }
   };
+
+  const activeError = error || localError;
 
   return (
     <div className="w-full space-y-4">
@@ -79,9 +86,10 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
         </div>
       )}
 
-      {(error || localError) && (
-        <div className="p-2.5 bg-red-50 border border-[#E63946] rounded-lg text-xs font-bold text-[#E63946]">
-          {error || localError}
+      {activeError && (
+        <div className="p-2.5 bg-red-50 border border-[#E63946] rounded-lg text-xs font-bold text-[#E63946] flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-[#E63946] shrink-0 mt-0.5" />
+          <span>{typeof activeError === 'string' ? activeError : formatAuthError(activeError)}</span>
         </div>
       )}
 
@@ -91,7 +99,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
             6-Digit Verification Code <span className="text-[#E63946]">*</span>
           </label>
           <div className="relative">
-            <KeyRound className="w-4 h-4 absolute left-3 top-3 text-gray-400 pointer-events-none" />
+            <KeyRound className="w-4 h-4 absolute left-3 top-3.5 text-gray-400 pointer-events-none" />
             <input
               type="text"
               maxLength={6}
@@ -126,3 +134,4 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
     </div>
   );
 };
+
