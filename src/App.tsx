@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import StoreApp from './StoreApp';
 import { AdminApp } from './admin/AdminApp';
 import { supabase } from './utils/supabase';
+import { isAdminEmail } from './utils/admin';
 
 export default function App() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -21,11 +22,17 @@ export default function App() {
       }
       
       let adminStatus = false;
-      const userEmail = session.user.email?.toLowerCase() || '';
+      const userEmail = session.user.email?.toLowerCase().trim() || '';
 
-      // Primary admin email or admin role in profiles table
-      if (userEmail === 'rohit007jsr@gmail.com' || userEmail.startsWith('admin@')) {
+      // Check authorized admin emails (rohit007jsr@gmail.com, yashchawdhury@proton.me, etc.)
+      if (isAdminEmail(userEmail)) {
         adminStatus = true;
+        // Keep profile role synced in Supabase
+        void Promise.resolve(
+          supabase
+            .from('profiles')
+            .upsert({ id: session.user.id, role: 'admin' }, { onConflict: 'id' })
+        ).catch(() => {});
       }
 
       try {

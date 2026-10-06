@@ -6,6 +6,7 @@ import { InvoiceModal } from '../../components/InvoiceModal';
 import { InvoiceData } from '../../utils/invoiceTemplate';
 import { SupabaseEmailModal } from '../../components/SupabaseEmailModal';
 import { SUPABASE_EMAIL_TEMPLATES } from '../../data/supabaseEmailTemplates';
+import { AUTHORIZED_ADMIN_EMAILS } from '../../utils/admin';
 
 export const AdminSettings: React.FC = () => {
   const [success, setSuccess] = useState(false);
@@ -728,6 +729,61 @@ export const AdminSettings: React.FC = () => {
                 className="w-full border-2 border-rukhi-black p-2.5 focus:outline-none focus:border-rukhi-accent"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Section: Authorized Store Administrators */}
+        <div className="bg-white border-2 border-rukhi-black p-6 shadow-[6px_6px_0px_#111111] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b-2 border-rukhi-black gap-2">
+            <div>
+              <h2 className="text-xl font-heading-en uppercase flex items-center gap-2">
+                <Shield size={20} className="text-rukhi-accent" /> Authorized Store Administrators
+              </h2>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Accounts granted full administrative access to products, orders, settings, and inventory.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleOpenSupabaseModal('invite-user')}
+              className="px-3.5 py-1.5 text-xs font-bold border-2 border-rukhi-black bg-neutral-100 hover:bg-[#111111] hover:text-white transition-colors flex items-center gap-1.5 shadow-[2px_2px_0px_#111111] self-start sm:self-auto cursor-pointer"
+            >
+              <UserPlus size={14} className="text-rukhi-accent" />
+              <span>Invite New Admin</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {AUTHORIZED_ADMIN_EMAILS.map((adminEmail, index) => {
+              const isYash = adminEmail.includes('yash');
+              const isRohit = adminEmail.includes('rohit');
+              const displayName = isYash ? 'Yash Chawdhury' : isRohit ? 'Rohit Sharma' : 'Store Admin';
+              const roleTitle = isRohit ? 'Super Administrator' : 'Administrator';
+
+              return (
+                <div 
+                  key={adminEmail} 
+                  className="p-3.5 border-2 border-rukhi-black bg-[#F7F7F5] flex items-center justify-between gap-3 shadow-[2px_2px_0px_#111111]"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 bg-[#111111] border border-white text-white flex items-center justify-center font-heading-en font-bold text-xs shrink-0">
+                      {displayName.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-xs text-[#111111] truncate">{displayName}</span>
+                        <span className="bg-emerald-100 border border-emerald-400 text-emerald-800 text-[9px] font-black uppercase px-1.5 py-0.2 rounded shrink-0">
+                          ACTIVE
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-600 truncate">{adminEmail}</p>
+                      <p className="text-[10px] text-gray-400 font-medium">{roleTitle}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

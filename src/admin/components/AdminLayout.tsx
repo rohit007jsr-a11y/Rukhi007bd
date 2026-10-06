@@ -65,6 +65,12 @@ export const AdminLayout: React.FC = () => {
           .single();
         if (data?.username) {
           setAdminName(data.username);
+        } else if (session.user.email?.toLowerCase().includes('yash')) {
+          setAdminName('Yash Chawdhury (Admin)');
+        } else if (session.user.email?.toLowerCase().includes('rohit')) {
+          setAdminName('Rohit (Admin)');
+        } else {
+          setAdminName(session.user.email?.split('@')[0] || 'Rukhi Admin');
         }
       }
     }
