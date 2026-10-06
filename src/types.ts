@@ -148,6 +148,11 @@ export interface TranslationDictionary {
     estimatedDeliveryLabel: string;
     estimatedDeliveryValue: string;
     backToStore: string;
+    emailAddress: string;
+    emailHelp: string;
+    emailSentSuccess: string;
+    viewInvoiceBtn: string;
+    resendInvoiceBtn: string;
   };
   search: {
     placeholder: string;

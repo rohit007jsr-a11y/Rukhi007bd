@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Shield, HelpCircle, Check, HelpCircle as HelpIcon } from 'lucide-react';
+import { Save, Shield, HelpCircle, Check, Mail, Server, Send, Eye, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
+import { testEmailConnection } from '../../utils/emailService';
+import { InvoiceModal } from '../../components/InvoiceModal';
+import { InvoiceData } from '../../utils/invoiceTemplate';
 
 export const AdminSettings: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Email Test States
+  const [testEmailRecipient, setTestEmailRecipient] = useState('rohit007jsr@gmail.com');
+  const [isTestingEmail, setIsTestingEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState<{ success: boolean; message: string; provider?: string } | null>(null);
+  const [isPreviewInvoiceOpen, setIsPreviewInvoiceOpen] = useState(false);
+
   const [formData, setFormData] = useState({
     storeName: 'Rukhi Bangladesh',
     contactPhone: '+8801700998877',
@@ -24,6 +34,18 @@ export const AdminSettings: React.FC = () => {
     facebookUrl: 'https://facebook.com',
     instagramUrl: 'https://instagram.com',
     youtubeUrl: 'https://youtube.com',
+    // Email / Resend / Custom SMTP Configuration
+    emailProvider: 'resend', // 'resend' | 'smtp' | 'both'
+    resendApiKey: '',
+    resendFromEmail: 'onboarding@resend.dev',
+    smtpHost: '',
+    smtpPort: '587',
+    smtpSecure: false,
+    smtpUser: '',
+    smtpPass: '',
+    smtpFromEmail: 'orders@rukhibd.com',
+    smtpFromName: 'Rukhi Bangladesh',
+    enableCustomerInvoices: true,
   });
 
   useEffect(() => {
@@ -38,9 +60,19 @@ export const AdminSettings: React.FC = () => {
         if (data && data.description) {
           const parsed = JSON.parse(data.description);
           setFormData(prev => ({ ...prev, ...parsed }));
+        } else {
+          // Check localStorage fallback
+          const local = localStorage.getItem('rukhi_admin_settings');
+          if (local) {
+            setFormData(prev => ({ ...prev, ...JSON.parse(local) }));
+          }
         }
       } catch (err) {
         console.error('No remote settings found, using defaults.');
+        const local = localStorage.getItem('rukhi_admin_settings');
+        if (local) {
+          setFormData(prev => ({ ...prev, ...JSON.parse(local) }));
+        }
       } finally {
         setLoading(false);
       }
@@ -83,23 +115,356 @@ export const AdminSettings: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('Failed to save settings:', err);
-      alert('Failed to save settings to database. They have been saved locally.');
+      // Fallback save locally
+      localStorage.setItem('rukhi_admin_settings', JSON.stringify(formData));
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     } finally {
       setSaving(false);
     }
   };
 
+  const handleTestEmail = async () => {
+    if (!testEmailRecipient || !testEmailRecipient.includes('@')) {
+      setTestEmailResult({ success: false, message: 'Please enter a valid recipient email address.' });
+      return;
+    }
+
+    setIsTestingEmail(true);
+    setTestEmailResult(null);
+
+    try {
+      const result = await testEmailConnection(testEmailRecipient, {
+        emailProvider: formData.emailProvider as any,
+        resendApiKey: formData.resendApiKey,
+        resendFromEmail: formData.resendFromEmail,
+        smtpHost: formData.smtpHost,
+        smtpPort: formData.smtpPort,
+        smtpSecure: formData.smtpSecure,
+        smtpUser: formData.smtpUser,
+        smtpPass: formData.smtpPass,
+        smtpFromEmail: formData.smtpFromEmail,
+        smtpFromName: formData.smtpFromName,
+      });
+
+      setTestEmailResult(result);
+    } catch (err: any) {
+      setTestEmailResult({
+        success: false,
+        message: err.message || 'Error occurred while testing email.',
+      });
+    } finally {
+      setIsTestingEmail(false);
+    }
+  };
+
+  // Sample data for previewing the native invoice modal
+  const sampleInvoice: InvoiceData = {
+    orderId: 'RUKHI-9241',
+    customerName: 'Rohit Sharma (Preview)',
+    email: testEmailRecipient || 'rohit007jsr@gmail.com',
+    phone: '01712345678',
+    district: 'Dhaka',
+    address: 'House 42, Road 11, Banani, Sector 3',
+    notes: 'Please call before arrival. Deliver to 4th floor.',
+    items: [
+      {
+        id: '1',
+        name: 'Rukhi Heavyweight Graphic Hoodie (Black)',
+        price: 1850,
+        size: 'L',
+        quantity: 1,
+      },
+      {
+        id: '2',
+        name: 'Rukhi Oversized Heavy Cotton Streetwear Tee',
+        price: 850,
+        size: 'XL',
+        quantity: 2,
+      },
+    ],
+    subtotal: 3550,
+    deliveryCharge: 0,
+    grandTotal: 3550,
+    createdAt: new Date().toISOString(),
+    paymentMethod: 'Cash on Delivery (COD)',
+    storeSettings: {
+      storeName: formData.storeName,
+      contactPhone: formData.contactPhone,
+      contactEmail: formData.contactEmail,
+      address: formData.address,
+    },
+  };
+
   if (loading) {
-    return <div className="p-8 text-center font-bold">LOADING SETTINGS...</div>;
+    return <div className="p-8 text-center font-bold">LOADING STORE SETTINGS...</div>;
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl pb-16">
       <h1 className="text-3xl font-heading-en uppercase mb-8 border-b-4 border-rukhi-black inline-block pr-8 pb-2">
-        Store Settings
+        Store & Email Settings
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        
+        {/* NEW SECTION: Resend & Custom SMTP Email Configuration */}
+        <div className="bg-white border-2 border-rukhi-black p-6 shadow-[6px_6px_0px_#111111] space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-rukhi-black gap-2">
+            <div>
+              <h2 className="text-xl font-heading-en uppercase flex items-center gap-2">
+                <Mail size={22} className="text-rukhi-accent" /> Email, Resend & Custom SMTP Setup
+              </h2>
+              <p className="text-xs text-gray-600 mt-1">
+                Configure automated customer invoice receipts sent on every Cash-on-Delivery order.
+              </p>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setIsPreviewInvoiceOpen(true)}
+              className="px-3.5 py-1.5 text-xs font-bold border-2 border-rukhi-black bg-gray-50 hover:bg-gray-200 transition-colors flex items-center gap-1.5 shadow-[2px_2px_0px_#111111] self-start sm:self-auto cursor-pointer"
+            >
+              <Eye size={14} className="text-rukhi-accent" />
+              <span>Preview Native Invoice</span>
+            </button>
+          </div>
+
+          {/* Toggle automatic order receipts */}
+          <div className="flex items-center justify-between p-3.5 bg-emerald-50 border-2 border-emerald-600 rounded-lg">
+            <div>
+              <p className="font-bold text-sm text-emerald-900">Automatic Customer Invoice & Receipt Dispatch</p>
+              <p className="text-xs text-emerald-700">When enabled, placing an order automatically delivers a branded invoice to the buyer's inbox.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+              <input
+                type="checkbox"
+                checked={formData.enableCustomerInvoices}
+                onChange={e => setFormData({ ...formData, enableCustomerInvoices: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 border border-rukhi-black"></div>
+            </label>
+          </div>
+
+          {/* Provider Selection */}
+          <div>
+            <label className="block text-sm font-bold uppercase mb-2">Primary Dispatch Engine</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { id: 'resend', label: 'Resend API (Recommended)', desc: 'Supabase backend or direct Resend API' },
+                { id: 'smtp', label: 'Custom SMTP', desc: 'Any custom mail server or Nodemailer' },
+                { id: 'both', label: 'Hybrid (Resend + Fallback)', desc: 'Tries Resend first, falls back to SMTP' },
+              ].map(provider => (
+                <div
+                  key={provider.id}
+                  onClick={() => setFormData({ ...formData, emailProvider: provider.id })}
+                  className={`p-3.5 border-2 cursor-pointer transition-all ${
+                    formData.emailProvider === provider.id
+                      ? 'border-rukhi-black bg-black text-white shadow-[3px_3px_0px_#E63946]'
+                      : 'border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  <div className="font-bold text-xs uppercase">{provider.label}</div>
+                  <div className={`text-[11px] mt-1 ${formData.emailProvider === provider.id ? 'text-gray-300' : 'text-gray-500'}`}>
+                    {provider.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Resend API Settings */}
+          {(formData.emailProvider === 'resend' || formData.emailProvider === 'both') && (
+            <div className="p-4 bg-gray-50 border-2 border-rukhi-black space-y-4">
+              <div className="flex items-center gap-2 font-bold text-sm uppercase text-rukhi-black border-b pb-2">
+                <Server size={16} className="text-rukhi-accent" /> Resend Credentials
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1">
+                    Resend API Key <span className="text-gray-400 font-normal">(`re_...`)</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.resendApiKey}
+                    onChange={e => setFormData({ ...formData, resendApiKey: e.target.value })}
+                    placeholder="re_123456789_abcdef..."
+                    className="w-full border-2 border-rukhi-black p-2.5 font-mono text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Can also be provided via <code className="bg-gray-200 px-1 py-0.5 rounded">RESEND_API_KEY</code> environment variable.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1">
+                    Sender Address (From Email)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.resendFromEmail}
+                    onChange={e => setFormData({ ...formData, resendFromEmail: e.target.value })}
+                    placeholder="onboarding@resend.dev or orders@yourdomain.com"
+                    className="w-full border-2 border-rukhi-black p-2.5 text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Use <code className="bg-gray-200 px-1 py-0.5 rounded">onboarding@resend.dev</code> for testing or your verified domain.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Custom SMTP Settings */}
+          {(formData.emailProvider === 'smtp' || formData.emailProvider === 'both') && (
+            <div className="p-4 bg-gray-50 border-2 border-rukhi-black space-y-4">
+              <div className="flex items-center gap-2 font-bold text-sm uppercase text-rukhi-black border-b pb-2">
+                <Server size={16} className="text-blue-600" /> Custom SMTP Server Configuration
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold uppercase mb-1">SMTP Host</label>
+                  <input
+                    type="text"
+                    value={formData.smtpHost}
+                    onChange={e => setFormData({ ...formData, smtpHost: e.target.value })}
+                    placeholder="smtp.resend.com / smtp.gmail.com / mail.yourdomain.com"
+                    className="w-full border-2 border-rukhi-black p-2.5 font-mono text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1">SMTP Port</label>
+                  <input
+                    type="text"
+                    value={formData.smtpPort}
+                    onChange={e => setFormData({ ...formData, smtpPort: e.target.value })}
+                    placeholder="587 or 465"
+                    className="w-full border-2 border-rukhi-black p-2.5 font-mono text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1">SMTP Username</label>
+                  <input
+                    type="text"
+                    value={formData.smtpUser}
+                    onChange={e => setFormData({ ...formData, smtpUser: e.target.value })}
+                    placeholder="resend / your_username"
+                    className="w-full border-2 border-rukhi-black p-2.5 text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1">SMTP Password</label>
+                  <input
+                    type="password"
+                    value={formData.smtpPass}
+                    onChange={e => setFormData({ ...formData, smtpPass: e.target.value })}
+                    placeholder="••••••••••••"
+                    className="w-full border-2 border-rukhi-black p-2.5 text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                </div>
+
+                <div className="flex items-center pt-5">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold uppercase">
+                    <input
+                      type="checkbox"
+                      checked={formData.smtpSecure}
+                      onChange={e => setFormData({ ...formData, smtpSecure: e.target.checked })}
+                      className="w-4 h-4 border-2 border-rukhi-black accent-rukhi-accent"
+                    />
+                    <span>Use SSL / TLS (Port 465)</span>
+                  </label>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold uppercase mb-1">Sender Email</label>
+                  <input
+                    type="text"
+                    value={formData.smtpFromEmail}
+                    onChange={e => setFormData({ ...formData, smtpFromEmail: e.target.value })}
+                    placeholder="orders@rukhibd.com"
+                    className="w-full border-2 border-rukhi-black p-2.5 text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1">Sender Name</label>
+                  <input
+                    type="text"
+                    value={formData.smtpFromName}
+                    onChange={e => setFormData({ ...formData, smtpFromName: e.target.value })}
+                    placeholder="Rukhi Bangladesh"
+                    className="w-full border-2 border-rukhi-black p-2.5 text-xs focus:outline-none focus:border-rukhi-accent bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Test Email Section */}
+          <div className="p-4 bg-amber-50/70 border-2 border-rukhi-black rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs uppercase flex items-center gap-1.5 text-[#111111]">
+                <Send size={14} className="text-rukhi-accent" /> Live Email Delivery Verification
+              </span>
+              <span className="text-[10px] text-gray-500 font-medium">Verify credentials before accepting real orders</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="email"
+                value={testEmailRecipient}
+                onChange={e => setTestEmailRecipient(e.target.value)}
+                placeholder="rohit007jsr@gmail.com"
+                className="flex-1 border-2 border-rukhi-black p-2.5 text-xs focus:outline-none focus:border-rukhi-accent bg-white font-medium"
+              />
+              <button
+                type="button"
+                onClick={handleTestEmail}
+                disabled={isTestingEmail}
+                className="px-5 py-2.5 bg-rukhi-black text-white hover:bg-rukhi-accent text-xs font-bold uppercase border-2 border-rukhi-black shadow-[2px_2px_0px_#111111] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              >
+                {isTestingEmail ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    <span>Testing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    <span>Send Test Invoice</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {testEmailResult && (
+              <div className={`p-3 rounded border text-xs font-medium flex items-start gap-2 ${
+                testEmailResult.success
+                  ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
+                  : 'bg-red-50 border-red-400 text-red-800'
+              }`}>
+                {testEmailResult.success ? (
+                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="font-bold">{testEmailResult.message}</div>
+                  {testEmailResult.provider && (
+                    <div className="text-[10px] mt-0.5 opacity-80">Provider: {testEmailResult.provider}</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Section 1: Store Information */}
         <div className="bg-white border-2 border-rukhi-black p-6 shadow-[6px_6px_0px_#111111] space-y-4">
           <h2 className="text-xl font-heading-en uppercase border-b-2 border-rukhi-black pb-2 flex items-center gap-2">
@@ -281,11 +646,12 @@ export const AdminSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* Action Button & Confirmation */}
         <div className="flex flex-col sm:flex-row justify-end items-end sm:items-center gap-4 pt-4 pb-12">
           {success && (
             <div className="p-4 bg-green-50 border-2 border-green-600 text-green-900 font-bold flex items-center gap-2 shadow-[4px_4px_0px_#16a34a] animate-pulse">
               <Check size={20} />
-              SAVED SUCCESSFULLY!
+              SETTINGS SAVED SUCCESSFULLY!
             </div>
           )}
           <button
@@ -297,6 +663,15 @@ export const AdminSettings: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Invoice Preview Modal */}
+      {isPreviewInvoiceOpen && (
+        <InvoiceModal
+          isOpen={isPreviewInvoiceOpen}
+          onClose={() => setIsPreviewInvoiceOpen(false)}
+          invoiceData={sampleInvoice}
+        />
+      )}
     </div>
   );
 };

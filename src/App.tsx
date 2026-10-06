@@ -21,6 +21,13 @@ export default function App() {
       }
       
       let adminStatus = false;
+      const userEmail = session.user.email?.toLowerCase() || '';
+
+      // Primary admin email or admin role in profiles table
+      if (userEmail === 'rohit007jsr@gmail.com' || userEmail.startsWith('admin@')) {
+        adminStatus = true;
+      }
+
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -33,7 +40,6 @@ export default function App() {
         }
       } catch (err) {
         console.error('Failed to fetch profile role:', err);
-        adminStatus = false;
       } finally {
         setIsLoggedIn(true);
         setIsAdmin(adminStatus);

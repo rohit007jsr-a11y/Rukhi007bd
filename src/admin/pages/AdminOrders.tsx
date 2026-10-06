@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { Search, Eye, Filter, Calendar, FileText, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Search, Eye, Filter, Calendar, FileText, CheckCircle2, RefreshCw, Mail, Printer, Send, AlertCircle } from 'lucide-react';
+import { InvoiceModal } from '../../components/InvoiceModal';
+import { InvoiceData } from '../../utils/invoiceTemplate';
+import { sendOrderInvoice } from '../../utils/emailService';
 
 export const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -14,6 +17,72 @@ export const AdminOrders: React.FC = () => {
 
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [customerOrderHistory, setCustomerOrderHistory] = useState<any[]>([]);
+
+  // Invoice & Email state
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [modalInvoiceData, setModalInvoiceData] = useState<InvoiceData | null>(null);
+  const [isSendingOrderEmail, setIsSendingOrderEmail] = useState(false);
+  const [orderEmailResult, setOrderEmailResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const getInvoiceFromOrder = (order: any): InvoiceData => {
+    const items = Array.isArray(order.items) ? order.items.map((i: any) => ({
+      name: i.name || i.product_name || 'Rukhi Apparel',
+      price: Number(i.price || 0),
+      size: i.size || 'M',
+      quantity: Number(i.quantity || 1),
+    })) : [];
+    
+    const subtotal = items.reduce((s: number, i: any) => s + (i.price * i.quantity), 0);
+    const grandTotal = Number(order.total_amount || subtotal);
+    const deliveryCharge = grandTotal > subtotal ? grandTotal - subtotal : (grandTotal >= 2500 ? 0 : (order.district === 'Dhaka' ? 80 : 130));
+
+    return {
+      orderId: order.order_id || `COD-${order.id?.slice(0, 6)?.toUpperCase() || 'ORDER'}`,
+      customerName: order.customer_name || order.shipping_details?.fullName || 'Customer',
+      email: order.user_email || order.shipping_details?.email || '',
+      phone: order.phone || order.shipping_details?.phone || '',
+      district: order.district || order.shipping_details?.district || 'Dhaka',
+      address: order.address || order.shipping_details?.address || '',
+      notes: order.notes || '',
+      items,
+      subtotal: subtotal || grandTotal,
+      deliveryCharge,
+      grandTotal,
+      createdAt: order.created_at,
+      paymentMethod: 'Cash on Delivery (COD)',
+    };
+  };
+
+  const handleOpenInvoice = (order: any) => {
+    const inv = getInvoiceFromOrder(order);
+    setModalInvoiceData(inv);
+    setIsInvoiceModalOpen(true);
+  };
+
+  const handleSendInvoiceEmail = async (order: any) => {
+    const inv = getInvoiceFromOrder(order);
+    if (!inv.email) {
+      setOrderEmailResult({ success: false, message: 'No email address registered on this order.' });
+      return;
+    }
+
+    setIsSendingOrderEmail(true);
+    setOrderEmailResult(null);
+    try {
+      const res = await sendOrderInvoice(inv);
+      setOrderEmailResult({
+        success: res.success,
+        message: res.message || 'Invoice sent!',
+      });
+    } catch (err: any) {
+      setOrderEmailResult({
+        success: false,
+        message: err.message || 'Failed sending email',
+      });
+    } finally {
+      setIsSendingOrderEmail(false);
+    }
+  };
 
   // List of administrative statuses for dropdowns
   const statuses = ['All', 'Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
@@ -319,13 +388,22 @@ export const AdminOrders: React.FC = () => {
 
                     {/* Action */}
                     <td className="p-4 text-right">
-                      <button 
-                        onClick={() => setSelectedOrder(order)}
-                        className="p-2 border-2 border-rukhi-black hover:bg-rukhi-black hover:text-white transition-colors shadow-[2px_2px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-                        title="Open Details Drawer"
-                      >
-                        <Eye size={14} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button 
+                          onClick={() => handleOpenInvoice(order)}
+                          className="p-2 border-2 border-rukhi-black bg-white hover:bg-rukhi-black hover:text-white transition-colors shadow-[2px_2px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 cursor-pointer"
+                          title="View / Print Official Invoice"
+                        >
+                          <FileText size={14} className="text-rukhi-accent" />
+                        </button>
+                        <button 
+                          onClick={() => setSelectedOrder(order)}
+                          className="p-2 border-2 border-rukhi-black hover:bg-rukhi-black hover:text-white transition-colors shadow-[2px_2px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer"
+                          title="Open Details Drawer"
+                        >
+                          <Eye size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -428,6 +506,52 @@ export const AdminOrders: React.FC = () => {
                   <span className="font-bold uppercase text-xs">COD Balance to Collect</span>
                   <span className="font-bold text-xl text-rukhi-accent">৳ {selectedOrder.total_amount}</span>
                 </div>
+
+                {/* Invoice & Email Action Bar */}
+                <div className="mt-4 p-4 bg-gray-50 border-2 border-rukhi-black rounded-lg space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="font-bold text-xs uppercase text-[#111111] flex items-center gap-1.5">
+                        <FileText size={14} className="text-rukhi-accent" /> Customer Digital Invoice & Email
+                      </span>
+                      <span className="text-[11px] text-gray-500 block mt-0.5">
+                        Recipient: <strong>{selectedOrder.user_email || selectedOrder.shipping_details?.email || 'No email saved'}</strong>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenInvoice(selectedOrder)}
+                        className="px-3 py-1.5 text-xs font-bold border-2 border-rukhi-black bg-white hover:bg-gray-200 transition-colors flex items-center gap-1.5 shadow-[2px_2px_0px_#111111] cursor-pointer"
+                      >
+                        <Eye size={13} className="text-rukhi-accent" />
+                        <span>View / Print Invoice</span>
+                      </button>
+
+                      {selectedOrder.user_email && (
+                        <button
+                          type="button"
+                          onClick={() => handleSendInvoiceEmail(selectedOrder)}
+                          disabled={isSendingOrderEmail}
+                          className="px-3 py-1.5 text-xs font-bold border-2 border-rukhi-black bg-rukhi-black text-white hover:bg-rukhi-accent transition-colors flex items-center gap-1.5 shadow-[2px_2px_0px_#E63946] disabled:opacity-50 cursor-pointer"
+                        >
+                          {isSendingOrderEmail ? <RefreshCw size={13} className="animate-spin" /> : <Mail size={13} />}
+                          <span>Dispatch Email</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {orderEmailResult && (
+                    <div className={`p-2.5 rounded border text-xs font-bold flex items-center gap-2 mt-2 ${
+                      orderEmailResult.success ? 'bg-emerald-50 border-emerald-500 text-emerald-800' : 'bg-red-50 border-red-500 text-red-800'
+                    }`}>
+                      {orderEmailResult.success ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                      <span>{orderEmailResult.message}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Customer History Log in Modal */}
@@ -485,6 +609,21 @@ export const AdminOrders: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Interactive Native Invoice Modal */}
+      {isInvoiceModalOpen && modalInvoiceData && (
+        <InvoiceModal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          invoiceData={modalInvoiceData}
+          onResendSuccess={() => {
+            setOrderEmailResult({
+              success: true,
+              message: 'Invoice dispatched to customer successfully!',
+            });
+          }}
+        />
       )}
     </div>
   );

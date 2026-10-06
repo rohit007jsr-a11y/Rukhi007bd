@@ -107,6 +107,11 @@ export const translations: Record<'en' | 'bn', TranslationDictionary> = {
       estimatedDeliveryLabel: 'Estimated Delivery',
       estimatedDeliveryValue: '2 - 3 Business Days',
       backToStore: 'Back to Marketplace',
+      emailAddress: 'Email Address (for Digital Invoice & Receipt)',
+      emailHelp: 'We will immediately send an official digital invoice & order receipt to this email.',
+      emailSentSuccess: 'Official Invoice & Receipt sent to',
+      viewInvoiceBtn: 'View & Print Official Invoice',
+      resendInvoiceBtn: 'Resend Invoice Email',
     },
     search: {
       placeholder: 'Search earbuds, frying pan, serum, t-shirts, phone stand...',
@@ -252,6 +257,11 @@ export const translations: Record<'en' | 'bn', TranslationDictionary> = {
       estimatedDeliveryLabel: 'আনুমানিক সময়',
       estimatedDeliveryValue: '২ - ৩ কার্যদিবস',
       backToStore: 'স্টোরে ফিরে যান',
+      emailAddress: 'ইমেইল ঠিকানা (ডিজিটাল ইনভয়েস ও রসিদের জন্য)',
+      emailHelp: 'অর্ডার কনফার্ম করার সাথে সাথে এই ইমেইলে অফিশিয়াল ডিজিটাল ইনভয়েস ও রসিদ পাঠানো হবে।',
+      emailSentSuccess: 'অফিসিয়াল ইনভয়েস ও রসিদ পাঠানো হয়েছে',
+      viewInvoiceBtn: 'অফিসিয়াল ইনভয়েস দেখুন ও প্রিন্ট করুন',
+      resendInvoiceBtn: 'পুনরায় ইনভয়েস ইমেইল পাঠান',
     },
     search: {
       placeholder: 'ইয়ারবাড, ফ্রাইপ্যান, সিরাম, টি-শার্ট, মেটাল স্ট্যান্ড খুঁজুন...',
