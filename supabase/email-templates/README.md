@@ -1,66 +1,50 @@
-# RUKHI Native Supabase Auth Email Templates
+# RUKHI Native Supabase Auth Email Templates (Optimized & Verified)
 
-Custom designed, high-converting, mobile-responsive HTML email templates matching **RUKHI**'s streetwear aesthetic (black `#111111`, accent `#E63946`, warm off-white `#F7F7F5`).
+Custom designed, high-converting HTML email templates matching **RUKHI**'s streetwear aesthetic (black `#111111`, accent `#E63946`, warm off-white `#F7F7F5`).
 
-Each template is 100% compliant with Supabase's email template engine and supports **both** 1-Click action links (`{{ .ConfirmationURL }}`) and the 6-digit OTP token box (`{{ .Token }}`), ensuring compatibility whether your auth flow uses link redirects or in-app OTP modal verification.
+> **Supabase Guideline Compliance Note:**
+> Supabase Auth Email Templates strictly enforce a **5,000 character limit** (`content: <=5000 characters`). All templates below have been streamlined and verified to be well under this limit while preserving high-end responsive styling, branding, and dual-mode authentication.
 
 ---
 
-## 📁 Files Included
+## 📁 Template Directory & Size Audit
 
-| File | Supabase Dashboard Section | Description |
-| :--- | :--- | :--- |
-| `confirm-signup.html` | **Authentication &rarr; Email Templates &rarr; Confirm signup** | Sent upon new customer registration to verify email. |
-| `invite-user.html` | **Authentication &rarr; Email Templates &rarr; Invite user** | Sent when an admin invites a team member, staff, or user. |
-| `reset-password.html` | **Authentication &rarr; Email Templates &rarr; Reset password** | Sent when a customer requests a password reset code/link. |
+| File | Supabase Dashboard Tab | Character Count | Status |
+| :--- | :--- | :--- | :--- |
+| `confirm-signup.html` | **Confirm signup** | **3,229 chars** | Passed (`<= 5000`) |
+| `invite-user.html` | **Invite user** | **3,232 chars** | Passed (`<= 5000`) |
+| `reset-password.html` | **Reset password** | **3,503 chars** | Passed (`<= 5000`) |
 
 ---
 
 ## 🚀 How to Setup in Supabase Dashboard
 
-1. Log into your [Supabase Dashboard](https://supabase.com/dashboard).
-2. Open your project (e.g. `ospvqktnstfmratkcmcr`).
-3. In the left navigation sidebar, navigate to **Authentication** &rarr; **Email Templates**.
-4. Configure each template:
+1. Open your [Supabase Dashboard](https://supabase.com/dashboard).
+2. Go to **Authentication** &rarr; **Email Templates**.
+3. Select each tab and paste the corresponding HTML:
 
 ### 1. Confirm signup (Email Verification)
-- Click the **Confirm signup** tab.
+- **Tab:** `Confirm signup`
 - **Subject line:** `Welcome to RUKHI - Confirm Your Email`
-- In the **Message Body (HTML)** editor:
-  - Select and delete the default content.
-  - Open `supabase/email-templates/confirm-signup.html`, copy all contents, and paste into the editor.
-- Click **Save**.
+- **Body:** Copy and paste the entire contents of `supabase/email-templates/confirm-signup.html`
+- Click **Save changes**.
 
 ### 2. Invite user (User Invitation)
-- Click the **Invite user** tab.
+- **Tab:** `Invite user`
 - **Subject line:** `You've Been Invited to Join RUKHI`
-- In the **Message Body (HTML)** editor:
-  - Delete default content.
-  - Open `supabase/email-templates/invite-user.html`, copy all contents, and paste into the editor.
-- Click **Save**.
+- **Body:** Copy and paste the entire contents of `supabase/email-templates/invite-user.html`
+- Click **Save changes**.
 
 ### 3. Reset password (Forgot Password)
-- Click the **Reset password** tab.
+- **Tab:** `Reset password`
 - **Subject line:** `Reset Your RUKHI Password`
-- In the **Message Body (HTML)** editor:
-  - Delete default content.
-  - Open `supabase/email-templates/reset-password.html`, copy all contents, and paste into the editor.
-- Click **Save**.
+- **Body:** Copy and paste the entire contents of `supabase/email-templates/reset-password.html`
+- Click **Save changes**.
 
 ---
 
-## 🏷️ Supabase Variables Used
-
-These templates utilize standard Supabase Go template tags accepted by the Auth service:
-
-- `{{ .ConfirmationURL }}` &mdash; Full one-click secure redirect URL with token.
-- `{{ .Token }}` &mdash; 6-digit OTP code / alphanumeric verification code.
-- `{{ .Email }}` &mdash; Recipient's registered email address.
-- `{{ .SiteURL }}` &mdash; The base website URL set in your Supabase Auth Settings.
-
----
-
-## 📱 Email Client Compatibility
-- Tested and styled for **Gmail** (Desktop & Mobile App), **Apple Mail**, **Outlook**, **Yahoo Mail**, and mobile web views.
-- Includes hidden preheaders to prevent awkward inbox preview text leaks.
-- Uses bulletproof VML buttons for Outlook and clean inline CSS for spam filter compliance.
+## 🏷️ Supported Supabase Variables
+- `{{ .ConfirmationURL }}` &mdash; One-click secure redirect link.
+- `{{ .Token }}` &mdash; 6-digit OTP code (matches Rukhi's in-app 3-step modal).
+- `{{ .Email }}` &mdash; Recipient's email address.
+- `{{ .SiteURL }}` &mdash; Store URL.

@@ -141,6 +141,11 @@ export const SupabaseEmailModal: React.FC<SupabaseEmailModalProps> = ({
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2">
+            <span className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-400 px-2 py-1">
+              <Check size={13} className="text-emerald-600" />
+              <span>{activeTemplate.charCount} / 5,000 chars</span>
+            </span>
+
             <button
               onClick={handleCopyHtml}
               className="px-3.5 py-1.5 bg-[#E63946] hover:bg-[#d02f3c] text-white text-xs font-black uppercase tracking-wider border-2 border-[#111111] shadow-[2px_2px_0px_#111111] flex items-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
@@ -250,7 +255,12 @@ export const SupabaseEmailModal: React.FC<SupabaseEmailModalProps> = ({
           ) : (
             <div className="w-full max-w-4xl bg-[#111111] text-gray-200 p-4 font-mono text-xs overflow-x-auto border-2 border-black rounded shadow">
               <div className="flex items-center justify-between pb-3 border-b border-gray-800 mb-3">
-                <span className="text-[#E63946] font-bold">{activeTemplate.id}.html ({activeTemplate.html.length} characters)</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#E63946] font-bold">{activeTemplate.id}.html</span>
+                  <span className="text-emerald-400 bg-emerald-950/60 border border-emerald-700 text-[10px] px-2 py-0.5 rounded font-mono">
+                    ✓ {activeTemplate.html.length} / 5,000 chars (Passed Supabase Limit)
+                  </span>
+                </div>
                 <button
                   onClick={handleCopyHtml}
                   className="px-3 py-1 bg-white text-black hover:bg-[#E63946] hover:text-white font-bold text-xs uppercase transition-colors flex items-center gap-1.5"

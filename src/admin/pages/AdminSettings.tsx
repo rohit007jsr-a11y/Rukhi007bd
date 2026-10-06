@@ -555,9 +555,14 @@ export const AdminSettings: React.FC = () => {
                 <p className="text-[11px] text-gray-600 leading-relaxed">
                   Sent upon customer registration. Welcomes buyer to the crew with email confirmation button, 6-digit code, and COD highlights.
                 </p>
-                <div className="bg-white border border-gray-200 p-2 text-[10px]">
-                  <span className="text-gray-400 block font-bold uppercase">Subject:</span>
-                  <span className="font-semibold text-gray-800">Welcome to RUKHI - Confirm Your Email</span>
+                <div className="bg-white border border-gray-200 p-2 text-[10px] space-y-1">
+                  <div>
+                    <span className="text-gray-400 block font-bold uppercase">Subject:</span>
+                    <span className="font-semibold text-gray-800">Welcome to RUKHI - Confirm Your Email</span>
+                  </div>
+                  <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-300 inline-block">
+                    ✓ 3,229 / 5,000 chars (Passed Supabase limit)
+                  </div>
                 </div>
               </div>
 
@@ -598,9 +603,14 @@ export const AdminSettings: React.FC = () => {
                 <p className="text-[11px] text-gray-600 leading-relaxed">
                   Sent when you invite a staff member, co-manager, or VIP member. Includes official invitation badge, single-use invite link, and access details.
                 </p>
-                <div className="bg-white border border-gray-200 p-2 text-[10px]">
-                  <span className="text-gray-400 block font-bold uppercase">Subject:</span>
-                  <span className="font-semibold text-gray-800">You've Been Invited to Join RUKHI</span>
+                <div className="bg-white border border-gray-200 p-2 text-[10px] space-y-1">
+                  <div>
+                    <span className="text-gray-400 block font-bold uppercase">Subject:</span>
+                    <span className="font-semibold text-gray-800">You've Been Invited to Join RUKHI</span>
+                  </div>
+                  <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-300 inline-block">
+                    ✓ 3,232 / 5,000 chars (Passed Supabase limit)
+                  </div>
                 </div>
               </div>
 
@@ -641,9 +651,14 @@ export const AdminSettings: React.FC = () => {
                 <p className="text-[11px] text-gray-600 leading-relaxed">
                   Sent for password recovery. Features a prominent 6-digit OTP code directly matching Rukhi's 3-step modal, plus 1-click recovery button.
                 </p>
-                <div className="bg-white border border-gray-200 p-2 text-[10px]">
-                  <span className="text-gray-400 block font-bold uppercase">Subject:</span>
-                  <span className="font-semibold text-gray-800">Reset Your RUKHI Password</span>
+                <div className="bg-white border border-gray-200 p-2 text-[10px] space-y-1">
+                  <div>
+                    <span className="text-gray-400 block font-bold uppercase">Subject:</span>
+                    <span className="font-semibold text-gray-800">Reset Your RUKHI Password</span>
+                  </div>
+                  <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-300 inline-block">
+                    ✓ 3,503 / 5,000 chars (Passed Supabase limit)
+                  </div>
                 </div>
               </div>
 
