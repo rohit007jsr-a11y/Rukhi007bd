@@ -64,6 +64,40 @@ export function getSavedEmailSettings(): EmailSettingsPayload {
 }
 
 /**
+ * Direct client-side helper to send via Resend REST API
+ */
+async function sendViaResendDirect(
+  apiKey: string,
+  from: string,
+  to: string,
+  subject: string,
+  html: string,
+  text?: string
+) {
+  const cleanFrom = from.includes('<') ? from : `Rukhi <${from}>`;
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey.trim()}`,
+    },
+    body: JSON.stringify({
+      from: cleanFrom,
+      to,
+      subject,
+      html,
+      text,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || `Resend API returned error status ${response.status}`);
+  }
+  return data;
+}
+
+/**
  * Dispatches the order invoice & receipt to the customer's email.
  * Supports Resend, Custom SMTP, and Supabase Edge Functions.
  */
@@ -75,7 +109,41 @@ export async function sendOrderInvoice(
   const htmlContent = generateInvoiceHtml(invoiceData);
   const textContent = generateInvoicePlainText(invoiceData);
 
-  // 1. Try sending via backend API (/api/send-invoice)
+  // 1. Try Resend Direct if API key is configured
+  if (
+    (settings.emailProvider === 'resend' || settings.emailProvider === 'both' || !settings.emailProvider) &&
+    settings.resendApiKey?.startsWith('re_')
+  ) {
+    try {
+      const resendResult = await sendViaResendDirect(
+        settings.resendApiKey,
+        settings.resendFromEmail || 'onboarding@resend.dev',
+        invoiceData.email,
+        `Your Rukhi Order Receipt & Invoice #${invoiceData.orderId || 'ORDER'} (Cash on Delivery)`,
+        htmlContent,
+        textContent
+      );
+
+      return {
+        success: true,
+        message: `Invoice dispatched to ${invoiceData.email} via Resend!`,
+        provider: 'Resend API',
+        messageId: resendResult?.id,
+        invoiceHtml: htmlContent,
+      };
+    } catch (directResendErr: any) {
+      console.warn('Direct Resend call failed, attempting backend route:', directResendErr);
+      if (settings.emailProvider === 'resend') {
+        return {
+          success: false,
+          message: `Resend error: ${directResendErr.message || 'Failed sending email'}`,
+          invoiceHtml: htmlContent,
+        };
+      }
+    }
+  }
+
+  // 2. Try sending via backend API (/api/send-invoice)
   try {
     const response = await fetch('/api/send-invoice', {
       method: 'POST',
@@ -96,11 +164,12 @@ export async function sendOrderInvoice(
       data = JSON.parse(responseText);
     } catch (parseErr) {
       console.warn('Backend /api/send-invoice returned non-JSON response:', responseText);
+      const isProxyNotFound = responseText.includes('NOT_FOUND') || responseText.includes('page could not be found') || response.status === 404;
       data = {
         success: false,
-        message: responseText && responseText.length < 200 
-          ? responseText 
-          : `Server returned non-JSON response (Status ${response.status}).`
+        message: isProxyNotFound 
+          ? 'Backend mail endpoint unavailable. Please enter a Resend API Key in Admin Settings for direct delivery.'
+          : (responseText && responseText.length < 150 ? responseText : `Server status ${response.status}`)
       };
     }
 
@@ -123,7 +192,7 @@ export async function sendOrderInvoice(
     console.warn('Could not connect to /api/send-invoice:', fetchErr);
   }
 
-  // 2. Try Supabase Edge Function (if configured on backend of Supabase)
+  // 3. Try Supabase Edge Function (if configured on backend of Supabase)
   if (supabase) {
     try {
       const { data: edgeData, error: edgeError } = await supabase.functions.invoke('send-order-receipt', {
@@ -148,7 +217,7 @@ export async function sendOrderInvoice(
     }
   }
 
-  // If no backend active yet, provide graceful message
+  // If no provider active yet, provide graceful message
   return {
     success: false,
     message: 'Could not connect to Resend/SMTP service. Please ensure credentials are saved in Store Settings.',
@@ -193,6 +262,49 @@ export async function testEmailConnection(
     createdAt: new Date().toISOString(),
   };
 
+  const subject = 'Test Email: Rukhi Invoice System Verification';
+  const testHtml = `
+    <div style="font-family: sans-serif; padding: 20px; border: 2px solid #111; max-width: 500px; margin: 0 auto; background: #fff;">
+      <h2 style="color: #E63946; margin-top: 0;">RUKHI STREETWEAR</h2>
+      <p><strong>Congratulations!</strong> Your email dispatch configuration is working properly.</p>
+      <p>Provider: <strong>${(settings.emailProvider || 'resend').toUpperCase()}</strong></p>
+      <p>Recipient: <strong>${recipientEmail}</strong></p>
+      <p style="font-size: 12px; color: #666;">Generated at: ${new Date().toISOString()}</p>
+    </div>
+  `;
+
+  // 1. Try direct Resend call if Resend API key is supplied
+  if (
+    (settings.emailProvider === 'resend' || settings.emailProvider === 'both' || !settings.emailProvider) &&
+    settings.resendApiKey?.startsWith('re_')
+  ) {
+    try {
+      const result = await sendViaResendDirect(
+        settings.resendApiKey,
+        settings.resendFromEmail || 'onboarding@resend.dev',
+        recipientEmail,
+        subject,
+        testHtml
+      );
+
+      return {
+        success: true,
+        provider: 'Resend API',
+        messageId: result?.id,
+        message: `Test email successfully delivered to ${recipientEmail} via Resend!`,
+      };
+    } catch (resendErr: any) {
+      console.warn('Direct Resend test failed, attempting backend route:', resendErr);
+      if (settings.emailProvider === 'resend') {
+        return {
+          success: false,
+          message: `Resend test failed: ${resendErr.message || 'API key invalid or domain unverified.'}`,
+        };
+      }
+    }
+  }
+
+  // 2. Try backend API (/api/test-email)
   try {
     const response = await fetch('/api/test-email', {
       method: 'POST',
@@ -210,11 +322,20 @@ export async function testEmailConnection(
       data = JSON.parse(responseText);
     } catch (parseErr) {
       console.warn('Backend /api/test-email returned non-JSON response:', responseText);
+      const isProxyNotFound = responseText.includes('NOT_FOUND') || responseText.includes('page could not be found') || response.status === 404;
+
+      if (isProxyNotFound) {
+        return {
+          success: false,
+          message: 'Server mail route unavailable. Please provide a Resend API key above for instant direct dispatch.',
+        };
+      }
+
       return {
         success: false,
-        message: responseText && responseText.length < 200 
+        message: responseText && responseText.length < 150 
           ? responseText 
-          : `Server returned non-JSON response (Status ${response.status} ${response.statusText}). Please check server logs.`,
+          : `Server returned status ${response.status}. Please check server settings.`,
       };
     }
 
