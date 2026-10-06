@@ -102,29 +102,29 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
   };
 
   return (
-    <section id="categories" className="py-20 bg-[#F7F7F5] border-b-2 border-[#111111]">
+    <section id="categories" className="py-12 sm:py-20 bg-[#F7F7F5] border-b-2 border-[#111111]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 pb-6 border-b-2 border-[#111111]">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-4 sm:gap-6 pb-4 sm:pb-6 border-b-2 border-[#111111]">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#E63946]" />
-              <span className={`text-xs font-bold uppercase tracking-widest text-[#E63946] ${bodyFontClass}`}>
+              <span className={`text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[#E63946] ${bodyFontClass}`}>
                 {lang === 'en' ? 'SHOP BY DEPARTMENT' : 'ক্যাটাগরি সমূহ'}
               </span>
             </div>
-            <h2 className={`text-3xl sm:text-5xl font-black text-[#111111] tracking-tight ${headingFontClass}`}>
+            <h2 className={`text-2xl sm:text-4xl md:text-5xl font-black text-[#111111] tracking-tight ${headingFontClass}`}>
               {t.title}
             </h2>
           </div>
-          <p className={`text-sm sm:text-base text-[#6B7280] max-w-md ${bodyFontClass}`}>
+          <p className={`text-xs sm:text-base text-[#6B7280] max-w-md ${bodyFontClass}`}>
             {t.subtitle}
           </p>
         </div>
 
         {/* 6 Category Grid Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 mb-10 sm:mb-16">
           {categoryCards.map((cat) => {
             const IconComponent = cat.icon;
             const isSelected = selectedCategory === cat.id;
@@ -133,7 +133,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
               <div
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.id)}
-                className={`group relative rounded-xl border-2 border-[#111111] overflow-hidden bg-white cursor-pointer transition-all duration-300 shadow-[5px_5px_0px_#111111] hover:shadow-[8px_8px_0px_#E63946] hover:-translate-y-1.5 ${
+                className={`group relative rounded-xl border-2 border-[#111111] overflow-hidden bg-white cursor-pointer transition-all duration-300 shadow-[3px_3px_0px_#111111] sm:shadow-[5px_5px_0px_#111111] hover:shadow-[8px_8px_0px_#E63946] hover:-translate-y-1 ${
                   isSelected ? 'ring-2 ring-[#E63946] border-[#E63946]' : ''
                 }`}
               >
@@ -149,24 +149,24 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/40 to-transparent" />
 
                   {/* Top Right Arrow Icon */}
-                  <div className="absolute top-3 right-3 p-2 bg-white text-[#111111] rounded-lg border border-[#111111] shadow-[2px_2px_0px_#111111] group-hover:bg-[#E63946] group-hover:text-white transition-all">
-                    <ArrowUpRight className="w-4 h-4 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 bg-white text-[#111111] rounded-lg border border-[#111111] shadow-[1px_1px_0px_#111111] sm:shadow-[2px_2px_0px_#111111] group-hover:bg-[#E63946] group-hover:text-white transition-all">
+                    <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
 
                   {/* Top Left Icon Pill */}
-                  <div className="absolute top-3 left-3 px-2.5 py-1 bg-[#111111]/90 backdrop-blur-sm text-white rounded border border-white/30 flex items-center gap-1.5 text-xs font-bold">
-                    <IconComponent className="w-3.5 h-3.5 text-[#E63946]" />
+                  <div className="absolute top-2 left-2 sm:top-3 sm:left-3 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-[#111111]/90 backdrop-blur-sm text-white rounded border border-white/30 flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-bold">
+                    <IconComponent className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#E63946]" />
                     <span className="hidden sm:inline uppercase text-[10px]">
                       {cat.id.replace('_', ' ')}
                     </span>
                   </div>
 
                   {/* Bottom Text Details */}
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <h3 className={`text-base sm:text-xl font-black uppercase tracking-tight text-white group-hover:text-[#E63946] transition-colors mb-1 ${headingFontClass}`}>
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 text-white">
+                    <h3 className={`text-xs sm:text-lg md:text-xl font-black uppercase tracking-tight text-white group-hover:text-[#E63946] transition-colors mb-0.5 sm:mb-1 ${headingFontClass}`}>
                       {lang === 'en' ? cat.titleEn : cat.titleBn}
                     </h3>
-                    <p className={`text-xs text-gray-300 line-clamp-1 ${bodyFontClass}`}>
+                    <p className={`text-[10px] sm:text-xs text-gray-300 line-clamp-1 ${bodyFontClass}`}>
                       {lang === 'en' ? cat.descEn : cat.descBn}
                     </p>
                   </div>
@@ -177,19 +177,19 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
         </div>
 
         {/* Sticky Filter Bar */}
-        <div className="p-4 bg-[#111111] rounded-xl border-2 border-[#111111] shadow-[6px_6px_0px_#E63946]">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <span className={`text-xs font-black uppercase tracking-widest text-white/80 whitespace-nowrap ${bodyFontClass}`}>
+        <div className="p-3 sm:p-4 bg-[#111111] rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] sm:shadow-[6px_6px_0px_#E63946]">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+            <span className={`text-[11px] sm:text-xs font-black uppercase tracking-widest text-white/80 whitespace-nowrap ${bodyFontClass}`}>
               {lang === 'en' ? 'FILTER MARKETPLACE CATALOG:' : 'মার্কেটপ্লেস ফিল্টার করুন:'}
             </span>
-            <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
+            <div className="flex overflow-x-auto no-scrollbar gap-1.5 sm:gap-2 w-full md:w-auto pb-1 justify-start md:justify-center">
               {categoryFilterTabs.map((tab) => {
                 const isActive = selectedCategory === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => handleCategoryClick(tab.id)}
-                    className={`px-3.5 py-2 text-xs font-extrabold uppercase rounded border-2 transition-all cursor-pointer whitespace-nowrap ${
+                    className={`px-3 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-extrabold uppercase rounded border-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                       isActive
                         ? 'bg-[#E63946] text-white border-white shadow-[2px_2px_0px_#FFFFFF]'
                         : 'bg-[#1A1A1A] text-gray-300 border-gray-700 hover:border-white hover:text-white'

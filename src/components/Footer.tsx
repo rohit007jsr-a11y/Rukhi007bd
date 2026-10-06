@@ -23,14 +23,14 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* COD Top Ticker Banner */}
-        <div className="p-4 bg-[#E63946] rounded-xl border-2 border-white mb-12 shadow-[4px_4px_0px_#FFFFFF] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8 text-white shrink-0" />
+        <div className="p-3.5 sm:p-4 bg-[#E63946] rounded-xl border-2 border-white mb-8 sm:mb-12 shadow-[3px_3px_0px_#FFFFFF] sm:shadow-[4px_4px_0px_#FFFFFF] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8 text-white shrink-0" />
             <div>
-              <span className={`text-sm sm:text-base font-black text-white uppercase block ${headingFontClass}`}>
+              <span className={`text-xs sm:text-base font-black text-white uppercase block ${headingFontClass}`}>
                 {t.codBanner}
               </span>
-              <span className={`text-xs text-white/90 ${bodyFontClass}`}>
+              <span className={`text-[11px] sm:text-xs text-white/90 ${bodyFontClass}`}>
                 {lang === 'en'
                   ? 'No advance payment required. Inspect parcel before paying.'
                   : 'কোনো ধরনের অগ্রিম পেমেন্ট লাগবে না। পার্সেল দেখে নিশ্চিত হয়ে মূল্য পরিশোধ করুন।'}
@@ -39,14 +39,14 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
           </div>
           <a
             href="#bestsellers"
-            className={`px-5 py-2.5 bg-white text-[#111111] font-extrabold text-xs uppercase rounded border border-[#111111] shadow-[2px_2px_0px_#111111] hover:bg-[#111111] hover:text-white transition-all cursor-pointer whitespace-nowrap ${bodyFontClass}`}
+            className={`w-full sm:w-auto text-center px-4 sm:px-5 py-2 sm:py-2.5 bg-white text-[#111111] font-extrabold text-[11px] sm:text-xs uppercase rounded border border-[#111111] shadow-[2px_2px_0px_#111111] hover:bg-[#111111] hover:text-white transition-all cursor-pointer whitespace-nowrap ${bodyFontClass}`}
           >
             {lang === 'en' ? 'Order Now (COD)' : 'এখনই অর্ডার করুন (COD)'}
           </a>
         </div>
 
         {/* Main Footer Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-gray-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10 pb-8 sm:pb-12 border-b border-gray-800">
           
           {/* Col 1 & 2: Brand Info */}
           <div className="lg:col-span-2 space-y-4">

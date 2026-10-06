@@ -48,17 +48,17 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-white/85 backdrop-blur-md shadow-sm py-4 text-[#111111]'
-          : 'bg-transparent py-6 text-white'
+          ? 'bg-white/90 backdrop-blur-md shadow-sm py-2.5 sm:py-4 text-[#111111]'
+          : 'bg-transparent py-3 sm:py-6 text-white'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Left: Brand Logo - Always "RUKHI" in Latin script */}
         <a
           href="#"
-          className="flex items-center gap-2 group focus:outline-none"
+          className="flex items-center gap-2 group focus:outline-none shrink-0"
         >
-          <span className="font-heading-en tracking-tighter text-2xl sm:text-3xl font-black text-[#111111] bg-white px-2.5 py-0.5 shadow-[3px_3px_0px_#E63946] border border-[#111111] transform -rotate-1 group-hover:rotate-0 transition-transform">
+          <span className="font-heading-en tracking-tighter text-xl sm:text-3xl font-black text-[#111111] bg-white px-2 sm:px-2.5 py-0.5 shadow-[2px_2px_0px_#E63946] sm:shadow-[3px_3px_0px_#E63946] border border-[#111111] transform -rotate-1 group-hover:rotate-0 transition-transform">
             RUKHI
           </span>
         </a>
@@ -98,11 +98,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Right: Actions */}
-        <div className="flex items-center space-x-3 sm:space-x-4">
-          {/* Language Toggle Pill */}
+        <div className="flex items-center space-x-1.5 sm:space-x-4">
+          {/* Language Toggle Pill (compact on mobile) */}
           <button
             onClick={onLanguageToggle}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase rounded-full border border-[#111111] transition-all duration-200 cursor-pointer shadow-[2px_2px_0px_#111111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] ${
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase rounded-full border border-[#111111] transition-all duration-200 cursor-pointer shadow-[2px_2px_0px_#111111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] ${
               isScrolled ? 'bg-[#111111] text-white border-[#111111]' : 'bg-white text-[#111111] border-[#111111]'
             }`}
             title="Switch Language"

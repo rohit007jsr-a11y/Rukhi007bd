@@ -38,30 +38,30 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 px-4">
-      <div className="bg-white rounded-2xl border-2 border-[#111111] max-w-2xl w-full shadow-[10px_10px_0px_#111111] overflow-hidden animate-in fade-in slide-in-from-top-10 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-start justify-center pt-10 sm:pt-20 px-2 sm:px-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl border-2 border-[#111111] max-w-2xl w-full shadow-[6px_6px_0px_#111111] sm:shadow-[10px_10px_0px_#111111] overflow-hidden">
         
         {/* Search Header */}
-        <div className="p-4 bg-[#F7F7F5] border-b-2 border-[#111111] flex items-center gap-3">
-          <Search className="w-5 h-5 text-[#E63946]" />
+        <div className="p-3 sm:p-4 bg-[#F7F7F5] border-b-2 border-[#111111] flex items-center gap-2.5 sm:gap-3">
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#E63946] shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.placeholder}
             autoFocus
-            className={`w-full bg-transparent text-base sm:text-lg font-bold text-[#111111] focus:outline-none ${bodyFontClass}`}
+            className={`w-full bg-transparent text-sm sm:text-lg font-bold text-[#111111] focus:outline-none ${bodyFontClass}`}
           />
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-500 hover:text-[#E63946] rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+            className="p-1 sm:p-1.5 text-gray-500 hover:text-[#E63946] rounded-full hover:bg-gray-200 transition-colors cursor-pointer shrink-0"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Results Body */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 max-h-[65vh] overflow-y-auto">
           {query.trim() === '' ? (
             <div className="text-center py-8">
               <span className={`text-xs font-bold text-gray-400 block mb-3 ${bodyFontClass}`}>

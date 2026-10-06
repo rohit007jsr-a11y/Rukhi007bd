@@ -131,46 +131,46 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border-2 border-[#111111] max-w-2xl w-full shadow-[10px_10px_0px_#111111] overflow-hidden my-8 animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl border-2 border-[#111111] max-w-2xl w-full shadow-[6px_6px_0px_#111111] sm:shadow-[10px_10px_0px_#111111] overflow-hidden my-4 sm:my-8 max-h-[92vh] flex flex-col">
         
         {/* Header */}
-        <div className="p-6 bg-[#F7F7F5] border-b-2 border-[#111111] flex items-center justify-between">
+        <div className="p-4 sm:p-6 bg-[#F7F7F5] border-b-2 border-[#111111] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-[#E63946]" />
-            <h2 className={`text-2xl font-black text-[#111111] ${headingFontClass}`}>
+            <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-[#E63946]" />
+            <h2 className={`text-xl sm:text-2xl font-black text-[#111111] ${headingFontClass}`}>
               {isSubmitted ? t.successTitle : t.title}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-[#111111] hover:text-[#E63946] rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 text-[#111111] hover:text-[#E63946] rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {isSubmitted ? (
           /* Order Confirmation View */
-          <div className="p-8 text-center space-y-6">
-            <div className="w-20 h-20 bg-emerald-100 border-2 border-emerald-500 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-[4px_4px_0px_#111111]">
-              <PackageCheck className="w-10 h-10" />
+          <div className="p-6 sm:p-8 text-center space-y-4 sm:space-y-6 overflow-y-auto flex-1">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-100 border-2 border-emerald-500 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-[3px_3px_0px_#111111]">
+              <PackageCheck className="w-8 h-8 sm:w-10 sm:h-10" />
             </div>
 
             <div>
-              <span className="text-xs font-black uppercase text-[#E63946] tracking-widest bg-[#E63946]/10 px-3 py-1 rounded">
+              <span className="text-[10px] sm:text-xs font-black uppercase text-[#E63946] tracking-widest bg-[#E63946]/10 px-2.5 sm:px-3 py-1 rounded">
                 100% CASH ON DELIVERY
               </span>
-              <h3 className={`text-2xl font-black text-[#111111] mt-3 mb-2 ${headingFontClass}`}>
+              <h3 className={`text-xl sm:text-2xl font-black text-[#111111] mt-2 sm:mt-3 mb-1.5 sm:mb-2 ${headingFontClass}`}>
                 {t.successTitle}
               </h3>
-              <p className={`text-sm text-[#6B7280] max-w-md mx-auto ${bodyFontClass}`}>
+              <p className={`text-xs sm:text-sm text-[#6B7280] max-w-md mx-auto ${bodyFontClass}`}>
                 {t.successDesc}
               </p>
             </div>
 
             {/* Receipt Box */}
-            <div className="p-6 bg-[#F7F7F5] rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#111111] text-left space-y-3 text-sm">
+            <div className="p-4 sm:p-6 bg-[#F7F7F5] rounded-xl border-2 border-[#111111] shadow-[3px_3px_0px_#111111] text-left space-y-2.5 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500">{t.orderIdLabel}:</span>
                 <span className="font-extrabold text-[#111111]">{orderId}</span>
@@ -183,7 +183,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <span className="text-gray-500">{t.estimatedDeliveryLabel}:</span>
                 <span className="font-bold text-[#111111]">{t.estimatedDeliveryValue}</span>
               </div>
-              <div className="flex justify-between pt-1 font-black text-base">
+              <div className="flex justify-between pt-1 font-black text-sm sm:text-base">
                 <span>{lang === 'en' ? 'Amount to Pay at Door:' : 'দরজায় পেমেন্ট করতে হবে:'}</span>
                 <span className="text-[#E63946]">
                   {lang === 'en' ? `৳ ${grandTotal.toLocaleString()}` : `৳ ${grandTotal.toLocaleString('bn-BD')}`}
@@ -193,14 +193,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
             <button
               onClick={onClose}
-              className={`w-full py-4 bg-[#111111] text-white font-extrabold text-sm uppercase rounded border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer ${bodyFontClass}`}
+              className={`w-full py-3.5 sm:py-4 bg-[#111111] text-white font-extrabold text-xs sm:text-sm uppercase rounded border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer ${bodyFontClass}`}
             >
               {t.backToStore}
             </button>
           </div>
         ) : (
           /* Form View */
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
             
             {currentUser ? (
               <div className={`text-xs p-3 bg-emerald-50 text-emerald-900 border-2 border-emerald-600 rounded-lg flex items-center justify-between font-bold ${bodyFontClass}`}>

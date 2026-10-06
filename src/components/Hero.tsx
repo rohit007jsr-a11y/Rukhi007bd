@@ -54,7 +54,7 @@ export const Hero: React.FC<HeroProps> = () => {
   };
 
   return (
-    <section className="relative w-full h-[55vh] sm:h-[65vh] min-h-[360px] sm:min-h-[480px] overflow-hidden bg-[#111111]">
+    <section className="relative w-full h-[48vh] sm:h-[65vh] min-h-[280px] sm:min-h-[480px] overflow-hidden bg-[#111111]">
       {/* Slides with Crossfade */}
       {slidesData.map((slide, index) => (
         <div
@@ -76,29 +76,29 @@ export const Hero: React.FC<HeroProps> = () => {
       {/* Manual Navigation Arrows */}
       <button
         onClick={handlePrev}
-        className="flex absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-2.5 sm:p-3 bg-black/40 hover:bg-black/70 text-white rounded-full border border-white/20 transition-all active:scale-95 cursor-pointer shadow-lg"
+        className="flex absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 bg-black/40 hover:bg-black/70 text-white rounded-full border border-white/20 transition-all active:scale-95 cursor-pointer shadow-lg"
         aria-label="Previous Slide"
       >
-        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+        <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
       </button>
       <button
         onClick={handleNext}
-        className="flex absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-2.5 sm:p-3 bg-black/40 hover:bg-black/70 text-white rounded-full border border-white/20 transition-all active:scale-95 cursor-pointer shadow-lg"
+        className="flex absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 bg-black/40 hover:bg-black/70 text-white rounded-full border border-white/20 transition-all active:scale-95 cursor-pointer shadow-lg"
         aria-label="Next Slide"
       >
-        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+        <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
       </button>
 
       {/* Dot Indicators */}
-      <div className="absolute bottom-4 left-0 right-0 z-30 flex items-center justify-center gap-2.5">
+      <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-30 flex items-center justify-center gap-2">
         {slidesData.map((_, index) => (
           <button
             key={index}
             onClick={() => handleDotClick(index)}
-            className={`transition-all duration-300 rounded-full cursor-pointer h-2 ${
+            className={`transition-all duration-300 rounded-full cursor-pointer h-1.5 sm:h-2 ${
               index === currentSlide
-                ? 'w-7 bg-[#E63946] shadow-[0_0_10px_#E63946]'
-                : 'w-2 bg-white/60 hover:bg-white'
+                ? 'w-5 sm:w-7 bg-[#E63946] shadow-[0_0_8px_#E63946]'
+                : 'w-1.5 sm:w-2 bg-white/60 hover:bg-white'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />

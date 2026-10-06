@@ -44,27 +44,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
         <div className="w-screen max-w-md bg-white border-l-2 border-[#111111] shadow-2xl flex flex-col justify-between">
           
           {/* Header */}
-          <div className="p-6 bg-[#F7F7F5] border-b-2 border-[#111111] flex items-center justify-between">
+          <div className="p-4 sm:p-6 bg-[#F7F7F5] border-b-2 border-[#111111] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-[#E63946]" />
-              <h2 className={`text-xl font-black text-[#111111] ${headingFontClass}`}>
+              <h2 className={`text-lg sm:text-xl font-black text-[#111111] ${headingFontClass}`}>
                 {t.title} ({cartItems.reduce((acc, i) => acc + i.quantity, 0)})
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-[#111111] hover:text-[#E63946] rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-[#111111] hover:text-[#E63946] rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
 
           {/* Free Shipping Progress Bar */}
-          <div className="p-4 bg-[#F0EDEA] border-b border-[#111111] text-xs">
+          <div className="p-3 sm:p-4 bg-[#F0EDEA] border-b border-[#111111] text-xs">
             <div className="flex items-center justify-between font-bold mb-1.5 text-[#111111]">
               <span className="flex items-center gap-1.5">
                 <Truck className="w-4 h-4 text-[#E63946]" />
@@ -85,7 +85,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </div>
 
           {/* Items List */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4">
             {cartItems.length === 0 ? (
               <div className="text-center py-16">
                 <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -175,8 +175,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
           {/* Footer & Checkout Button */}
           {cartItems.length > 0 && (
-            <div className="p-6 bg-[#F7F7F5] border-t-2 border-[#111111] space-y-4">
-              <div className="space-y-2 text-sm">
+            <div className="p-4 sm:p-6 bg-[#F7F7F5] border-t-2 border-[#111111] space-y-3 sm:space-y-4">
+              <div className="space-y-1.5 sm:space-y-2 text-sm">
                 <div className="flex justify-between text-[#6B7280]">
                   <span>{t.subtotal}</span>
                   <span className={`font-bold text-[#111111] ${headingFontClass}`}>
