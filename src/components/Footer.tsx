@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ShieldCheck, MapPin, Phone, Mail, Instagram, Facebook, Youtube } from 'lucide-react';
 import { Language } from '../types';
 import { translations } from '../translations';
@@ -37,12 +38,12 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
               </span>
             </div>
           </div>
-          <a
-            href="#bestsellers"
+          <Link
+            to="/categories"
             className={`w-full sm:w-auto text-center px-4 sm:px-5 py-2 sm:py-2.5 bg-white text-[#111111] font-extrabold text-[11px] sm:text-xs uppercase rounded border border-[#111111] shadow-[2px_2px_0px_#111111] hover:bg-[#111111] hover:text-white transition-all cursor-pointer whitespace-nowrap ${bodyFontClass}`}
           >
-            {lang === 'en' ? 'Order Now (COD)' : 'এখনই অর্ডার করুন (COD)'}
-          </a>
+            {lang === 'en' ? 'Explore Catalog (COD)' : 'ক্যাটালগ দেখুন (COD)'}
+          </Link>
         </div>
 
         {/* Main Footer Grid */}
@@ -50,11 +51,11 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
           
           {/* Col 1 & 2: Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <a href="#" className="inline-block">
+            <Link to="/" className="inline-block">
               <span className="font-heading-en tracking-tighter text-3xl font-black text-[#111111] bg-white px-2.5 py-1 shadow-[3px_3px_0px_#E63946] border border-white">
                 RUKHI
               </span>
-            </a>
+            </Link>
             <p className={`text-sm text-gray-400 max-w-sm leading-relaxed ${bodyFontClass}`}>
               {t.tagline}
             </p>
@@ -78,54 +79,68 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
             </h3>
             <ul className={`space-y-2.5 text-sm text-gray-300 ${bodyFontClass}`}>
               <li>
-                <a href="#categories" className="hover:text-white transition-colors">
-                  {lang === 'en' ? 'Categories' : 'ক্যাটাগরি'}
-                </a>
+                <Link to="/categories" className="hover:text-white transition-colors">
+                  {lang === 'en' ? 'All Departments' : 'সকল ডিপার্টমেন্ট'}
+                </Link>
               </li>
               <li>
-                <a href="#bestsellers" className="hover:text-white transition-colors">
+                <Link to="/category/fashion" className="hover:text-white transition-colors">
+                  {lang === 'en' ? 'Fashion Apparel' : 'ফ্যাশন পোশাক'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/category/electronics" className="hover:text-white transition-colors">
+                  {lang === 'en' ? 'Electronics & Audio' : 'ইলেকট্রনিক্স ও অডিও'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/category/home_kitchen" className="hover:text-white transition-colors">
+                  {lang === 'en' ? 'Home & Kitchen' : 'হোম ও কিচেন'}
+                </Link>
+              </li>
+              <li>
+                <a href="/#bestsellers" className="hover:text-white transition-colors">
                   {lang === 'en' ? 'Best Sellers' : 'সেরা বিক্রি হওয়া পণ্য'}
                 </a>
               </li>
               <li>
-                <a href="#whyus" className="hover:text-white transition-colors">
-                  {lang === 'en' ? 'Why Rukhi' : 'কেন রুখি'}
-                </a>
-              </li>
-              <li>
-                <a href="#about" className="hover:text-white transition-colors">
-                  {lang === 'en' ? 'Our Story' : 'আমাদের গল্প'}
-                </a>
-              </li>
-              <li>
-                <a href="#lookbook" className="hover:text-white transition-colors">
+                <a href="/#lookbook" className="hover:text-white transition-colors">
                   {lang === 'en' ? 'Guides & Updates' : 'গাইড ও আপডেট'}
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Col 4: Customer Care */}
+          {/* Col 4: Customer Care & Policies */}
           <div>
             <h3 className={`text-xs font-black uppercase tracking-widest text-[#E63946] mb-4 ${bodyFontClass}`}>
               {t.customerCare}
             </h3>
             <ul className={`space-y-2.5 text-sm text-gray-300 ${bodyFontClass}`}>
               <li>
-                <button
-                  onClick={() => onOpenPolicy?.('cod')}
-                  className="hover:text-white transition-colors cursor-pointer text-left"
-                >
-                  {lang === 'en' ? 'COD Policy' : 'ক্যাশ অন ডেলিভারি নীতি'}
-                </button>
+                <Link to="/terms" className="hover:text-white transition-colors text-left block">
+                  {lang === 'en' ? 'Terms & Conditions' : 'শর্তাবলী ও নিয়মাবলী'}
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={() => onOpenPolicy?.('return')}
-                  className="hover:text-white transition-colors cursor-pointer text-left"
-                >
+                <Link to="/terms?tab=cod" className="hover:text-white transition-colors text-left block">
+                  {lang === 'en' ? 'COD Policy' : 'ক্যাশ অন ডেলিভারি নীতি'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms?tab=return" className="hover:text-white transition-colors text-left block">
                   {lang === 'en' ? '7-Day Return Policy' : '৭ দিনের রিটার্ন নীতি'}
-                </button>
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms?tab=shipping" className="hover:text-white transition-colors text-left block">
+                  {lang === 'en' ? 'Shipping & Delivery' : 'শিপিং ও ডেলিভারি'}
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms?tab=privacy" className="hover:text-white transition-colors text-left block">
+                  {lang === 'en' ? 'Privacy Policy' : 'গোপনীয়তা নীতি'}
+                </Link>
               </li>
               <li>
                 <button
@@ -133,14 +148,6 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
                   className="hover:text-white transition-colors cursor-pointer text-left"
                 >
                   {lang === 'en' ? 'Size Guide' : 'সাইজ গাইড'}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => onOpenPolicy?.('track')}
-                  className="hover:text-white transition-colors cursor-pointer text-left"
-                >
-                  {lang === 'en' ? 'Track Order' : 'অর্ডার ট্র্যাক করুন'}
                 </button>
               </li>
             </ul>
@@ -169,10 +176,18 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
 
         </div>
 
-        {/* Bottom Copyright */}
+        {/* Bottom Copyright & Policy Links */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
           <p className={bodyFontClass}>{t.rights}</p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Link to="/terms" className="hover:text-gray-300 transition-colors">
+              Terms
+            </Link>
+            <span>&middot;</span>
+            <Link to="/terms?tab=privacy" className="hover:text-gray-300 transition-colors">
+              Privacy
+            </Link>
+            <span>&middot;</span>
             <span className="px-2 py-1 bg-gray-900 border border-gray-800 text-[10px] font-extrabold text-white rounded">
               CASH ON DELIVERY (ক্যাশ অন ডেলিভারি)
             </span>
@@ -183,3 +198,4 @@ export const Footer: React.FC<FooterProps> = ({ lang, storeSettings = {} as Reco
     </footer>
   );
 };
+

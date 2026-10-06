@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Eye, ShoppingBag, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Eye, ShoppingBag, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Language, Product } from '../types';
 import { translations } from '../translations';
 
@@ -197,6 +198,21 @@ export const BestSellers: React.FC<BestSellersProps> = ({
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Explore Full Category Department Link */}
+        <div className="mt-12 text-center">
+          <Link
+            to={selectedCategory && selectedCategory !== 'all' ? `/category/${selectedCategory}` : '/categories'}
+            className={`inline-flex items-center gap-2 px-6 py-3 bg-[#111111] text-white text-xs sm:text-sm font-black uppercase rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] hover:bg-[#E63946] hover:shadow-[4px_4px_0px_#111111] transition-all cursor-pointer ${bodyFontClass}`}
+          >
+            <span>
+              {selectedCategory && selectedCategory !== 'all'
+                ? (lang === 'en' ? `Explore All In ${selectedCategory.replace('_', ' ')}` : `${selectedCategory} এর সকল পণ্য দেখুন`)
+                : (lang === 'en' ? 'Explore All 6 Departments' : 'সকল ডিপার্টমেন্টের ক্যাটালগ দেখুন')}
+            </span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </section>

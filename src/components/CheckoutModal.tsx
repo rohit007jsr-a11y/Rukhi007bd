@@ -347,6 +347,29 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {t.placeOrder}
             </button>
 
+            {/* Terms and Conditions Disclaimer */}
+            <p className="text-[11px] text-center text-gray-500 mt-2">
+              {lang === 'en' ? 'By placing this order, you agree to our ' : 'অর্ডার কনফার্ম করার মাধ্যমে আপনি আমাদের '}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#E63946] underline hover:text-[#111111]"
+              >
+                {lang === 'en' ? 'Terms & Conditions' : 'শর্তাবলী ও পলিসি'}
+              </a>
+              {lang === 'en' ? ' and ' : ' এবং '}
+              <a
+                href="/terms?tab=cod"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#E63946] underline hover:text-[#111111]"
+              >
+                {lang === 'en' ? 'COD Policy' : 'ক্যাশ অন ডেলিভারি নীতি'}
+              </a>
+              {lang === 'en' ? '.' : ' মেনে নিচ্ছেন।'}
+            </p>
+
           </form>
         )}
 

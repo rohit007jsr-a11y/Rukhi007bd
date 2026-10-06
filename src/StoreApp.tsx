@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Language, CartItem, Product, LookbookPost } from './types';
 import { products as localProducts } from './data/products';
 import { supabase } from './utils/supabase';
@@ -23,13 +24,22 @@ import { LookbookModal } from './components/LookbookModal';
 import { AuthModal } from './components/AuthModal';
 import { PolicyModal } from './components/PolicyModal';
 import { WhatsAppButton } from './components/WhatsAppButton';
+import { CategoriesPage } from './pages/CategoriesPage';
+import { CategoryDetailPage } from './pages/CategoryDetailPage';
+import { TermsPage } from './pages/TermsPage';
 
 export default function StoreApp() {
   // Language State - default 'en'
   const [lang, setLang] = useState<Language>('en');
+  const location = useLocation();
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
   
-  // Dynamic Products and Settings
-  const [products, setProducts] = useState<Product[]>([]);
+  // Dynamic Products and Settings (initialized with local catalog so immediate view is rich)
+  const [products, setProducts] = useState<Product[]>(localProducts);
   const [storeSettings, setStoreSettings] = useState<any>({});
 
   // Policy Modal state
@@ -298,39 +308,117 @@ export default function StoreApp() {
         onLogout={handleLogout}
       />
 
-      {/* Main Content Sections */}
+      {/* Main Content Sections with React Router */}
       <main className="flex-grow">
-        {/* Section 2: Hero Carousel */}
-        <Hero lang={lang} />
+        <Routes>
+          {/* Home Page Route */}
+          <Route
+            path="/"
+            element={
+              <>
+                {/* Section 2: Hero Carousel */}
+                <Hero lang={lang} />
 
-        {/* Section 3: Shop by Category & Category Filter Bar */}
-        <CategorySection
-          lang={lang}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => setSelectedCategory(cat)}
-        />
+                {/* Section 3: Shop by Category & Category Filter Bar */}
+                <CategorySection
+                  lang={lang}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={(cat) => setSelectedCategory(cat)}
+                />
 
-        {/* Section 4: Best Sellers */}
-        <BestSellers
-          lang={lang}
-          products={products}
-          selectedCategory={selectedCategory}
-          onSelectCategoryFilter={(cat) => setSelectedCategory(cat)}
-          onAddToCart={handleAddToCart}
-          onQuickView={(prod) => setQuickViewProduct(prod)}
-        />
+                {/* Section 4: Best Sellers */}
+                <BestSellers
+                  lang={lang}
+                  products={products}
+                  selectedCategory={selectedCategory}
+                  onSelectCategoryFilter={(cat) => setSelectedCategory(cat)}
+                  onAddToCart={handleAddToCart}
+                  onQuickView={(prod) => setQuickViewProduct(prod)}
+                />
 
-        {/* Section 5: Why Shop With Us */}
-        <WhyUs lang={lang} />
+                {/* Section 5: Why Shop With Us */}
+                <WhyUs lang={lang} />
 
-        {/* Section 6: About */}
-        <AboutSection lang={lang} />
+                {/* Section 6: About */}
+                <AboutSection lang={lang} />
 
-        {/* Section 7: The Lookbook */}
-        <LookbookSection
-          lang={lang}
-          onSelectPost={(post) => setSelectedLookbookPost(post)}
-        />
+                {/* Section 7: The Lookbook */}
+                <LookbookSection
+                  lang={lang}
+                  onSelectPost={(post) => setSelectedLookbookPost(post)}
+                />
+              </>
+            }
+          />
+
+          {/* All Departments / Categories Overview Route */}
+          <Route
+            path="/categories"
+            element={
+              <CategoriesPage
+                lang={lang}
+                products={products}
+                onOpenQuickView={(prod) => setQuickViewProduct(prod)}
+              />
+            }
+          />
+
+          {/* Dedicated Category Page Route */}
+          <Route
+            path="/category/:categoryId"
+            element={
+              <CategoryDetailPage
+                lang={lang}
+                products={products}
+                onAddToCart={handleAddToCart}
+                onOpenQuickView={(prod) => setQuickViewProduct(prod)}
+              />
+            }
+          />
+
+          {/* Dedicated Terms and Conditions & Policies Hub Routes */}
+          <Route
+            path="/terms"
+            element={<TermsPage lang={lang} storeSettings={storeSettings} />}
+          />
+          <Route
+            path="/terms-and-conditions"
+            element={<TermsPage lang={lang} storeSettings={storeSettings} />}
+          />
+          <Route
+            path="/policy/:type"
+            element={<TermsPage lang={lang} storeSettings={storeSettings} />}
+          />
+
+          {/* Catch-all fallback */}
+          <Route
+            path="*"
+            element={
+              <>
+                <Hero lang={lang} />
+                <CategorySection
+                  lang={lang}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={(cat) => setSelectedCategory(cat)}
+                />
+                <BestSellers
+                  lang={lang}
+                  products={products}
+                  selectedCategory={selectedCategory}
+                  onSelectCategoryFilter={(cat) => setSelectedCategory(cat)}
+                  onAddToCart={handleAddToCart}
+                  onQuickView={(prod) => setQuickViewProduct(prod)}
+                />
+                <WhyUs lang={lang} />
+                <AboutSection lang={lang} />
+                <LookbookSection
+                  lang={lang}
+                  onSelectPost={(post) => setSelectedLookbookPost(post)}
+                />
+              </>
+            }
+          />
+        </Routes>
       </main>
 
       {/* Footer */}

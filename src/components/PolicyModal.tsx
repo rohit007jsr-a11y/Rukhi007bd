@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, ShieldCheck, FileText, HelpCircle, Truck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, ShieldCheck, FileText, HelpCircle, Truck, ExternalLink } from 'lucide-react';
 import { Language } from '../types';
 
 interface PolicyModalProps {
@@ -37,6 +38,13 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
       default:
         return <FileText className="w-6 h-6 text-[#E63946]" />;
     }
+  };
+
+  const getTabParam = () => {
+    if (type === 'cod') return 'cod';
+    if (type === 'return') return 'return';
+    if (type === 'track') return 'shipping';
+    return 'terms';
   };
 
   return (
@@ -83,7 +91,16 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 sm:p-4 bg-white border-t-2 border-[#111111] flex justify-end shrink-0">
+        <div className="p-3.5 sm:p-4 bg-white border-t-2 border-[#111111] flex items-center justify-between gap-3 shrink-0">
+          <Link
+            to={`/terms?tab=${getTabParam()}`}
+            onClick={onClose}
+            className={`inline-flex items-center gap-1.5 text-xs font-bold text-[#E63946] hover:underline ${bodyFontClass}`}
+          >
+            <span>{lang === 'en' ? 'View Full Policy Page' : 'সম্পূর্ণ পলিসি পেজ দেখুন'}</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+
           <button
             onClick={onClose}
             className={`px-5 sm:px-6 py-2 sm:py-2.5 bg-[#111111] text-white font-extrabold text-xs uppercase rounded-lg border border-[#111111] shadow-[3px_3px_0px_#E63946] hover:bg-[#E63946] hover:shadow-[2px_2px_0px_#111111] transition-all cursor-pointer ${bodyFontClass}`}

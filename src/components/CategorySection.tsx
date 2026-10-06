@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowUpRight, Shirt, Tv, Utensils, Sparkles, ShoppingBasket, Smartphone } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, ArrowRight, Shirt, Tv, Utensils, Sparkles, ShoppingBasket, Smartphone } from 'lucide-react';
 import { Language } from '../types';
 import { translations } from '../translations';
 
@@ -85,7 +86,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     { id: 'gadgets', labelEn: 'GADGETS', labelBn: 'গ্যাজেটস' },
   ];
 
-  const handleCategoryClick = (id: string) => {
+  const handleCategoryFilterTab = (id: string) => {
     onSelectCategory(id);
     const el = document.getElementById('bestsellers');
     if (el) {
@@ -118,9 +119,19 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
               {t.title}
             </h2>
           </div>
-          <p className={`text-xs sm:text-base text-[#6B7280] max-w-md ${bodyFontClass}`}>
-            {t.subtitle}
-          </p>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className={`text-xs sm:text-sm text-[#6B7280] max-w-sm ${bodyFontClass}`}>
+              {t.subtitle}
+            </p>
+            <Link
+              to="/categories"
+              className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#111111] text-white text-xs font-black uppercase rounded-lg border border-[#111111] shadow-[2px_2px_0px_#E63946] hover:bg-[#E63946] hover:shadow-[2px_2px_0px_#111111] transition-all cursor-pointer whitespace-nowrap shrink-0 ${bodyFontClass}`}
+            >
+              <span>{lang === 'en' ? 'All Departments' : 'সকল ডিপার্টমেন্ট'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
         {/* 6 Category Grid Cards */}
@@ -130,10 +141,10 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
             const isSelected = selectedCategory === cat.id;
 
             return (
-              <div
+              <Link
                 key={cat.id}
-                onClick={() => handleCategoryClick(cat.id)}
-                className={`group relative rounded-xl border-2 border-[#111111] overflow-hidden bg-white cursor-pointer transition-all duration-300 shadow-[3px_3px_0px_#111111] sm:shadow-[5px_5px_0px_#111111] hover:shadow-[8px_8px_0px_#E63946] hover:-translate-y-1 ${
+                to={`/category/${cat.id}`}
+                className={`group relative rounded-xl border-2 border-[#111111] overflow-hidden bg-white cursor-pointer transition-all duration-300 shadow-[3px_3px_0px_#111111] sm:shadow-[5px_5px_0px_#111111] hover:shadow-[8px_8px_0px_#E63946] hover:-translate-y-1 block ${
                   isSelected ? 'ring-2 ring-[#E63946] border-[#E63946]' : ''
                 }`}
               >
@@ -171,12 +182,12 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                     </p>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
 
-        {/* Sticky Filter Bar */}
+        {/* Sticky Filter Bar for Instant Homepage Browsing */}
         <div className="p-3 sm:p-4 bg-[#111111] rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#E63946] sm:shadow-[6px_6px_0px_#E63946]">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
             <span className={`text-[11px] sm:text-xs font-black uppercase tracking-widest text-white/80 whitespace-nowrap ${bodyFontClass}`}>
@@ -188,7 +199,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => handleCategoryClick(tab.id)}
+                    onClick={() => handleCategoryFilterTab(tab.id)}
                     className={`px-3 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-extrabold uppercase rounded border-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                       isActive
                         ? 'bg-[#E63946] text-white border-white shadow-[2px_2px_0px_#FFFFFF]'
@@ -207,3 +218,4 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     </section>
   );
 };
+
