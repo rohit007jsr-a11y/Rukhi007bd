@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Shield, HelpCircle, Check, Mail, Server, Send, Eye, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, Shield, HelpCircle, Check, Mail, Server, Send, Eye, RefreshCw, AlertCircle, CheckCircle2, Copy, Sparkles, UserPlus, KeyRound, ExternalLink } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
 import { testEmailConnection } from '../../utils/emailService';
 import { InvoiceModal } from '../../components/InvoiceModal';
 import { InvoiceData } from '../../utils/invoiceTemplate';
+import { SupabaseEmailModal } from '../../components/SupabaseEmailModal';
+import { SUPABASE_EMAIL_TEMPLATES } from '../../data/supabaseEmailTemplates';
 
 export const AdminSettings: React.FC = () => {
   const [success, setSuccess] = useState(false);
@@ -15,6 +17,11 @@ export const AdminSettings: React.FC = () => {
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<{ success: boolean; message: string; provider?: string } | null>(null);
   const [isPreviewInvoiceOpen, setIsPreviewInvoiceOpen] = useState(false);
+
+  // Supabase Auth Email Templates States
+  const [isSupabaseEmailModalOpen, setIsSupabaseEmailModalOpen] = useState(false);
+  const [selectedSupabaseTemplateId, setSelectedSupabaseTemplateId] = useState<'confirm-signup' | 'invite-user' | 'reset-password'>('confirm-signup');
+  const [copiedTemplateId, setCopiedTemplateId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     storeName: 'Rukhi Bangladesh',
@@ -155,6 +162,25 @@ export const AdminSettings: React.FC = () => {
       });
     } finally {
       setIsTestingEmail(false);
+    }
+  };
+
+  const handleOpenSupabaseModal = (templateId: 'confirm-signup' | 'invite-user' | 'reset-password') => {
+    setSelectedSupabaseTemplateId(templateId);
+    setIsSupabaseEmailModalOpen(true);
+  };
+
+  const handleCopyTemplateHtml = async (id: 'confirm-signup' | 'invite-user' | 'reset-password', e: React.MouseEvent) => {
+    e.stopPropagation();
+    const tmpl = SUPABASE_EMAIL_TEMPLATES.find(t => t.id === id);
+    if (tmpl) {
+      try {
+        await navigator.clipboard.writeText(tmpl.html);
+        setCopiedTemplateId(id);
+        setTimeout(() => setCopiedTemplateId(null), 2500);
+      } catch (err) {
+        console.error('Failed to copy template html', err);
+      }
     }
   };
 
@@ -465,6 +491,185 @@ export const AdminSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* SECTION: Supabase Auth Email Templates */}
+        <div className="bg-white border-2 border-rukhi-black p-6 shadow-[6px_6px_0px_#111111] space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-rukhi-black gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-heading-en uppercase flex items-center gap-2">
+                  <Sparkles size={22} className="text-rukhi-accent" /> Supabase Auth Email Templates
+                </h2>
+                <span className="bg-[#111111] text-white text-[10px] font-black uppercase px-2 py-0.5 tracking-wider">
+                  NATIVE DESIGNS
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mt-1">
+                Custom streetwear-branded HTML email designs that Supabase accepts directly. Compatible with both 1-click confirmation links and 6-digit in-app OTP codes.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleOpenSupabaseModal('confirm-signup')}
+              className="px-3.5 py-1.5 text-xs font-bold border-2 border-rukhi-black bg-[#111111] text-white hover:bg-rukhi-accent transition-colors flex items-center gap-1.5 shadow-[2px_2px_0px_#E63946] self-start sm:self-auto cursor-pointer"
+            >
+              <Eye size={14} />
+              <span>Open Template Studio</span>
+            </button>
+          </div>
+
+          {/* Quick Notice about where to paste */}
+          <div className="p-3.5 bg-neutral-100 border-2 border-rukhi-black flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <div className="space-y-0.5">
+              <span className="font-extrabold uppercase text-[#111111] flex items-center gap-1.5">
+                <ExternalLink size={14} className="text-rukhi-accent" /> How to apply to your Supabase project:
+              </span>
+              <p className="text-gray-600 text-[11px]">
+                Copy any template below, open <strong>Supabase Dashboard</strong> &rarr; <strong>Authentication</strong> &rarr; <strong>Email Templates</strong>, select the corresponding tab, and paste into the Message Body.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-mono text-gray-700 bg-white px-2.5 py-1.5 border border-gray-300 shrink-0">
+              <span>Tags supported:</span>
+              <code className="text-[#E63946] font-bold">&#123;&#123; .ConfirmationURL &#125;&#125;</code>
+              <code className="text-[#111111] font-bold">&#123;&#123; .Token &#125;&#125;</code>
+            </div>
+          </div>
+
+          {/* 3 Template Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Card 1: Confirm Signup */}
+            <div className="border-2 border-rukhi-black p-4 bg-[#F7F7F5] flex flex-col justify-between hover:shadow-[4px_4px_0px_#111111] transition-all">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="p-1.5 bg-[#111111] text-white">
+                    <UserPlus size={16} className="text-rukhi-accent" />
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-600 bg-white border border-gray-300 px-1.5 py-0.5">
+                    Confirm signup
+                  </span>
+                </div>
+                <h3 className="font-heading-en text-sm uppercase text-[#111111]">
+                  Sign Up Verification
+                </h3>
+                <p className="text-[11px] text-gray-600 leading-relaxed">
+                  Sent upon customer registration. Welcomes buyer to the crew with email confirmation button, 6-digit code, and COD highlights.
+                </p>
+                <div className="bg-white border border-gray-200 p-2 text-[10px]">
+                  <span className="text-gray-400 block font-bold uppercase">Subject:</span>
+                  <span className="font-semibold text-gray-800">Welcome to RUKHI - Confirm Your Email</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-300 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenSupabaseModal('confirm-signup')}
+                  className="flex-1 py-1.5 text-center text-xs font-bold uppercase border-2 border-rukhi-black bg-white hover:bg-gray-100 cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Eye size={12} />
+                  <span>Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyTemplateHtml('confirm-signup', e)}
+                  className="flex-1 py-1.5 text-center text-xs font-black uppercase border-2 border-rukhi-black bg-[#111111] text-white hover:bg-rukhi-accent cursor-pointer flex items-center justify-center gap-1"
+                >
+                  {copiedTemplateId === 'confirm-signup' ? <Check size={12} /> : <Copy size={12} />}
+                  <span>{copiedTemplateId === 'confirm-signup' ? 'Copied!' : 'Copy HTML'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Card 2: User Invite */}
+            <div className="border-2 border-rukhi-black p-4 bg-[#F7F7F5] flex flex-col justify-between hover:shadow-[4px_4px_0px_#111111] transition-all">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="p-1.5 bg-[#111111] text-white">
+                    <Mail size={16} className="text-rukhi-accent" />
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-600 bg-white border border-gray-300 px-1.5 py-0.5">
+                    Invite user
+                  </span>
+                </div>
+                <h3 className="font-heading-en text-sm uppercase text-[#111111]">
+                  User Invitation
+                </h3>
+                <p className="text-[11px] text-gray-600 leading-relaxed">
+                  Sent when you invite a staff member, co-manager, or VIP member. Includes official invitation badge, single-use invite link, and access details.
+                </p>
+                <div className="bg-white border border-gray-200 p-2 text-[10px]">
+                  <span className="text-gray-400 block font-bold uppercase">Subject:</span>
+                  <span className="font-semibold text-gray-800">You've Been Invited to Join RUKHI</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-300 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenSupabaseModal('invite-user')}
+                  className="flex-1 py-1.5 text-center text-xs font-bold uppercase border-2 border-rukhi-black bg-white hover:bg-gray-100 cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Eye size={12} />
+                  <span>Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyTemplateHtml('invite-user', e)}
+                  className="flex-1 py-1.5 text-center text-xs font-black uppercase border-2 border-rukhi-black bg-[#111111] text-white hover:bg-rukhi-accent cursor-pointer flex items-center justify-center gap-1"
+                >
+                  {copiedTemplateId === 'invite-user' ? <Check size={12} /> : <Copy size={12} />}
+                  <span>{copiedTemplateId === 'invite-user' ? 'Copied!' : 'Copy HTML'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Card 3: Forgot Password */}
+            <div className="border-2 border-rukhi-black p-4 bg-[#F7F7F5] flex flex-col justify-between hover:shadow-[4px_4px_0px_#111111] transition-all">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="p-1.5 bg-[#111111] text-white">
+                    <KeyRound size={16} className="text-rukhi-accent" />
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-600 bg-white border border-gray-300 px-1.5 py-0.5">
+                    Reset password
+                  </span>
+                </div>
+                <h3 className="font-heading-en text-sm uppercase text-[#111111]">
+                  Forget Password
+                </h3>
+                <p className="text-[11px] text-gray-600 leading-relaxed">
+                  Sent for password recovery. Features a prominent 6-digit OTP code directly matching Rukhi's 3-step modal, plus 1-click recovery button.
+                </p>
+                <div className="bg-white border border-gray-200 p-2 text-[10px]">
+                  <span className="text-gray-400 block font-bold uppercase">Subject:</span>
+                  <span className="font-semibold text-gray-800">Reset Your RUKHI Password</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-300 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenSupabaseModal('reset-password')}
+                  className="flex-1 py-1.5 text-center text-xs font-bold uppercase border-2 border-rukhi-black bg-white hover:bg-gray-100 cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Eye size={12} />
+                  <span>Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyTemplateHtml('reset-password', e)}
+                  className="flex-1 py-1.5 text-center text-xs font-black uppercase border-2 border-rukhi-black bg-[#111111] text-white hover:bg-rukhi-accent cursor-pointer flex items-center justify-center gap-1"
+                >
+                  {copiedTemplateId === 'reset-password' ? <Check size={12} /> : <Copy size={12} />}
+                  <span>{copiedTemplateId === 'reset-password' ? 'Copied!' : 'Copy HTML'}</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         {/* Section 1: Store Information */}
         <div className="bg-white border-2 border-rukhi-black p-6 shadow-[6px_6px_0px_#111111] space-y-4">
           <h2 className="text-xl font-heading-en uppercase border-b-2 border-rukhi-black pb-2 flex items-center gap-2">
@@ -670,6 +875,15 @@ export const AdminSettings: React.FC = () => {
           isOpen={isPreviewInvoiceOpen}
           onClose={() => setIsPreviewInvoiceOpen(false)}
           invoiceData={sampleInvoice}
+        />
+      )}
+
+      {/* Supabase Auth Email Templates Studio Modal */}
+      {isSupabaseEmailModalOpen && (
+        <SupabaseEmailModal
+          isOpen={isSupabaseEmailModalOpen}
+          onClose={() => setIsSupabaseEmailModalOpen(false)}
+          initialTemplateId={selectedSupabaseTemplateId}
         />
       )}
     </div>
