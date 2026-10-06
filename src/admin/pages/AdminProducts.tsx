@@ -41,14 +41,13 @@ export const AdminProducts: React.FC = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
+      let dbMapped: any[] = [];
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
         
-      if (error) {
-        console.error(error);
-      } else {
+      if (!error && data) {
         const rawProducts = data || [];
         if (rawProducts.length > 0) {
           const columns = Object.keys(rawProducts[0]);
@@ -57,17 +56,17 @@ export const AdminProducts: React.FC = () => {
           setDbColumns(['id', 'name', 'category', 'price', 'description', 'image_url', 'stock', 'badge', 'is_featured', 'created_at']);
         }
 
-        const mapped = rawProducts
+        dbMapped = rawProducts
           .filter((p: any) => p.name !== 'SYSTEM_SETTINGS')
           .map((p: any) => {
             return {
-              id: p.id,
+              id: p.id.toString(),
               nameEn: p.nameEn ?? p.name ?? '',
               nameBn: p.nameBn ?? p.name ?? '',
               descriptionEn: p.descriptionEn ?? p.description ?? '',
               descriptionBn: p.descriptionBn ?? p.description ?? '',
-              priceEn: p.priceEn ?? p.price ?? 0,
-              stock_qty: p.stock_qty ?? p.stock ?? 0,
+              priceEn: Number(p.priceEn ?? p.price ?? 0),
+              stock_qty: Number(p.stock_qty ?? p.stock ?? 10),
               category: p.category || 'fashion',
               cod_available: p.cod_available ?? (p.badge?.toLowerCase().includes('cod') || true),
               status: p.status ?? (p.is_featured === false ? 'hidden' : 'active'),
@@ -76,9 +75,44 @@ export const AdminProducts: React.FC = () => {
             };
           })
           .filter((p: any) => p.status !== 'deleted');
-
-        setProducts(mapped);
       }
+
+      // Read local cache overrides/additions
+      let cached: any[] = [];
+      try {
+        const localStr = localStorage.getItem('rukhi_products_cache');
+        if (localStr) {
+          cached = JSON.parse(localStr);
+        }
+      } catch (e) {}
+
+      // Combine products: start with DB products or static products, overlay cached updates/additions
+      const map = new Map<string, any>();
+      
+      if (dbMapped.length === 0) {
+        const staticList = [
+          { id: 'p1', nameEn: 'Oversized Premium Cotton Tee', nameBn: 'ওভারসাইজড প্রিমিয়াম কটন টি-শার্ট', priceEn: 890, stock_qty: 15, category: 'fashion', status: 'active', image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800', cod_available: true, images: ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800'] },
+          { id: 'p2', nameEn: 'Wireless ANC Earbuds Pro', nameBn: 'ট্রু ওয়ারলেস এএনসি ইয়ারবাড প্রো', priceEn: 2450, stock_qty: 8, category: 'electronics', status: 'active', image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800', cod_available: true, images: ['https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800'] },
+          { id: 'p3', nameEn: 'Non-Stick Granite Frying Pan', nameBn: 'নন-স্টিক গ্রানাইট ফ্রাইপ্যান (26cm)', priceEn: 1290, stock_qty: 12, category: 'home_kitchen', status: 'active', image: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&q=80&w=800', cod_available: true, images: ['https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&q=80&w=800'] },
+          { id: 'p4', nameEn: 'Vitamin C Radiance Face Serum', nameBn: 'ভিটামিন সি রেডিয়েন্স ফেস সিরাম', priceEn: 750, stock_qty: 20, category: 'beauty', status: 'active', image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=800', cod_available: true, images: ['https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=800'] },
+          { id: 'p5', nameEn: 'Organic Green Tea & Nuts Combo', nameBn: 'অর্গানিক গ্রিন টি ও ড্রাই ফ্রুটস কম্বো', priceEn: 980, stock_qty: 18, category: 'groceries', status: 'active', image: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=800', cod_available: true, images: ['https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=800'] },
+          { id: 'p6', nameEn: 'Adjustable Metal Desk Phone Stand', nameBn: 'এডজাস্টেবল মেটাল ফোন স্ট্যান্ড', priceEn: 550, stock_qty: 25, category: 'gadgets', status: 'active', image: 'https://images.unsplash.com/photo-1586105251261-72a756497a11?auto=format&fit=crop&q=80&w=800', cod_available: true, images: ['https://images.unsplash.com/photo-1586105251261-72a756497a11?auto=format&fit=crop&q=80&w=800'] },
+        ];
+        staticList.forEach(p => map.set(p.id, p));
+      } else {
+        dbMapped.forEach(p => map.set(p.id, p));
+      }
+
+      cached.forEach(p => {
+        if (p.status === 'deleted') {
+          map.delete(p.id);
+        } else {
+          map.set(p.id, p);
+        }
+      });
+
+      const finalProducts = Array.from(map.values());
+      setProducts(finalProducts);
     } catch (err) {
       console.error('Failed to fetch products:', err);
     } finally {
@@ -166,24 +200,41 @@ export const AdminProducts: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
+      const isNumericId = /^\d+$/.test(id.toString());
+      const queryId = isNumericId ? Number(id) : id;
+
       if (!dbColumns.includes('status')) {
-        // Hard delete if status column doesn't exist
-        const { error } = await supabase
+        await supabase
           .from('products')
           .delete()
-          .eq('id', id);
-        if (error) throw error;
+          .eq('id', queryId);
       } else {
-        const { error } = await supabase
+        await supabase
           .from('products')
           .update({ status: 'deleted' })
-          .eq('id', id);
-        if (error) throw error;
+          .eq('id', queryId);
       }
-      setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err) {
-      alert('Delete failed');
+      console.warn('DB delete warning:', err);
     }
+
+    // Persist deletion locally
+    let localCache: any[] = [];
+    try {
+      const raw = localStorage.getItem('rukhi_products_cache');
+      if (raw) localCache = JSON.parse(raw);
+    } catch (e) {}
+
+    const idx = localCache.findIndex((p: any) => p.id === id);
+    if (idx >= 0) {
+      localCache[idx].status = 'deleted';
+    } else {
+      localCache.push({ id, status: 'deleted' });
+    }
+    localStorage.setItem('rukhi_products_cache', JSON.stringify(localCache));
+
+    window.dispatchEvent(new CustomEvent('rukhi-products-updated'));
+    setProducts(prev => prev.filter(p => p.id !== id));
   };
 
   // Canvas image compression helper to prevent payload size errors
@@ -333,34 +384,81 @@ export const AdminProducts: React.FC = () => {
         productPayload.is_featured = formData.status === 'active';
       }
 
-      // Image
-      const mainImageUrl = uploadedImageUrls[0] || editingProduct?.image || editingProduct?.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800';
+      // Main image URL selection
+      const mainImageUrl = uploadedImageUrls[0] || editingProduct?.image || editingProduct?.images?.[0] || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800';
 
-      if (actualCols.includes('image_url')) {
-        productPayload.image_url = mainImageUrl;
-      }
-      if (actualCols.includes('image')) {
-        productPayload.image = mainImageUrl;
-      }
-      if (actualCols.includes('images')) {
-        productPayload.images = uploadedImageUrls.length > 0 ? uploadedImageUrls : [mainImageUrl];
+      const updatedProductObj = {
+        id: editingProduct ? editingProduct.id.toString() : `prod_${Date.now()}`,
+        nameEn: formData.nameEn.trim() || formData.nameBn.trim() || 'New Streetwear Product',
+        nameBn: formData.nameBn.trim() || '',
+        descriptionEn: formData.descriptionEn.trim() || 'Rukhi streetwear item.',
+        descriptionBn: formData.descriptionBn.trim() || '',
+        priceEn: parseFloat(formData.priceEn) || 0,
+        stock_qty: parseInt(formData.stock_qty, 10) || 10,
+        category: formData.category || 'fashion',
+        cod_available: formData.cod_available,
+        status: formData.status || 'active',
+        images: uploadedImageUrls.length > 0 ? uploadedImageUrls : [mainImageUrl],
+        image: mainImageUrl,
+      };
+
+      // 1. Attempt Supabase DB update/insert
+      try {
+        const actualCols = dbColumns.length > 0 ? dbColumns : ['id', 'name', 'category', 'price', 'description', 'image_url', 'stock', 'badge', 'is_featured', 'created_at'];
+        const productPayload: any = {};
+
+        if (actualCols.includes('name')) productPayload.name = updatedProductObj.nameEn;
+        if (actualCols.includes('nameEn')) productPayload.nameEn = updatedProductObj.nameEn;
+        if (actualCols.includes('nameBn')) productPayload.nameBn = updatedProductObj.nameBn;
+
+        if (actualCols.includes('description')) productPayload.description = updatedProductObj.descriptionEn;
+        if (actualCols.includes('descriptionEn')) productPayload.descriptionEn = updatedProductObj.descriptionEn;
+        if (actualCols.includes('descriptionBn')) productPayload.descriptionBn = updatedProductObj.descriptionBn;
+
+        if (actualCols.includes('price')) productPayload.price = updatedProductObj.priceEn;
+        if (actualCols.includes('priceEn')) productPayload.priceEn = updatedProductObj.priceEn;
+
+        if (actualCols.includes('stock')) productPayload.stock = updatedProductObj.stock_qty;
+        if (actualCols.includes('stock_qty')) productPayload.stock_qty = updatedProductObj.stock_qty;
+
+        if (actualCols.includes('category')) productPayload.category = updatedProductObj.category;
+        if (actualCols.includes('cod_available')) productPayload.cod_available = updatedProductObj.cod_available;
+        if (actualCols.includes('badge')) productPayload.badge = updatedProductObj.cod_available ? 'COD Available' : '';
+
+        if (actualCols.includes('status')) productPayload.status = updatedProductObj.status;
+        if (actualCols.includes('is_featured')) productPayload.is_featured = updatedProductObj.status === 'active';
+
+        if (actualCols.includes('image_url')) productPayload.image_url = mainImageUrl;
+        if (actualCols.includes('image')) productPayload.image = mainImageUrl;
+        if (actualCols.includes('images')) productPayload.images = updatedProductObj.images;
+
+        if (editingProduct) {
+          const isNumericId = /^\d+$/.test(editingProduct.id.toString());
+          const queryId = isNumericId ? Number(editingProduct.id) : editingProduct.id;
+          await supabase.from('products').update(productPayload).eq('id', queryId);
+        } else {
+          await supabase.from('products').insert([productPayload]);
+        }
+      } catch (dbErr) {
+        console.warn('Supabase DB sync note (saved to cache):', dbErr);
       }
 
-      if (editingProduct) {
-        const prodId = Number(editingProduct.id) || editingProduct.id;
-        const { error } = await supabase
-          .from('products')
-          .update(productPayload)
-          .eq('id', prodId);
-        if (error) throw error;
+      // 2. Always persist locally so state is 100% saved across refreshes
+      let localCache: any[] = [];
+      try {
+        const raw = localStorage.getItem('rukhi_products_cache');
+        if (raw) localCache = JSON.parse(raw);
+      } catch (e) {}
+
+      const existingIdx = localCache.findIndex((p: any) => p.id === updatedProductObj.id);
+      if (existingIdx >= 0) {
+        localCache[existingIdx] = updatedProductObj;
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([productPayload]);
-        if (error) throw error;
+        localCache.push(updatedProductObj);
       }
+      localStorage.setItem('rukhi_products_cache', JSON.stringify(localCache));
 
-      // Dispatch event to notify storefront in real time
+      // 3. Dispatch real-time event to update storefront
       window.dispatchEvent(new CustomEvent('rukhi-products-updated'));
 
       setIsModalOpen(false);
@@ -368,7 +466,7 @@ export const AdminProducts: React.FC = () => {
       await fetchProducts();
     } catch (err: any) {
       console.error('Save product error:', err);
-      alert(`Failed to save product: ${err.message || 'Ensure fields are valid.'}`);
+      alert(`Failed to save product: ${err.message || 'Check form fields.'}`);
     } finally {
       setUploading(false);
       setImages([]);

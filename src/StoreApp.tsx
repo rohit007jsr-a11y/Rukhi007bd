@@ -97,6 +97,7 @@ export default function StoreApp() {
   useEffect(() => {
     async function loadDynamicData() {
       try {
+        let dbProducts: Product[] = [];
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -110,14 +111,15 @@ export default function StoreApp() {
             } catch(e) {}
           }
           
-          const dbProducts = data
+          dbProducts = data
             .filter(p => p.name !== 'SYSTEM_SETTINGS' && p.status !== 'hidden')
             .map((p: any) => ({
               id: p.id.toString(),
               nameEn: p.nameEn ?? p.name ?? '',
               nameBn: p.nameBn ?? p.name ?? '',
-              categoryEn: p.category ?? 'fashion',
-              categoryBn: p.category ?? 'fashion',
+              category: p.category ?? 'fashion',
+              categoryEn: p.category ? p.category.toUpperCase() : 'FASHION',
+              categoryBn: p.category ?? 'ফ্যাশন',
               priceEn: Number(p.priceEn ?? p.price ?? 0),
               priceBn: (p.priceEn ?? p.price ?? 0).toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]),
               originalPriceEn: p.original_price ? Number(p.original_price) : undefined,
@@ -125,23 +127,63 @@ export default function StoreApp() {
               descriptionEn: p.descriptionEn ?? p.description ?? '',
               descriptionBn: p.descriptionBn ?? p.description ?? '',
               image: p.image_url ?? p.image ?? 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
-              images: p.images ?? (p.image_url ? [p.image_url] : []),
               sizes: ['S', 'M', 'L', 'XL'],
+              fabricEn: p.fabricEn || '100% Quality Material',
+              fabricBn: p.fabricBn || '১০০% কোয়ালিটি ফ্যাব্রিক',
               badge: p.badge || (p.cod_available !== false ? 'COD Available' : ''),
               badgeEn: p.badge || 'COD Available',
               badgeBn: p.badge || 'ক্যাশ অন ডেলিভারি',
               isNew: p.is_featured ?? false,
-              stock: p.stock_qty ?? p.stock ?? 10
             }));
-          
-          setProducts(dbProducts);
+        }
 
-          if (dbProducts.length > 0 && cartItems.length === 0) {
-            setCartItems([
-              { product: dbProducts[0], size: 'L', quantity: 1 },
-              { product: dbProducts[1] || dbProducts[0], size: '32', quantity: 1 },
-            ]);
+        // Read local storage cache override
+        let cached: any[] = [];
+        try {
+          const raw = localStorage.getItem('rukhi_products_cache');
+          if (raw) cached = JSON.parse(raw);
+        } catch (e) {}
+
+        const map = new Map<string, Product>();
+
+        // Start with base list: DB products or local static products
+        const baseList = dbProducts.length > 0 ? dbProducts : localProducts;
+        baseList.forEach(p => map.set(p.id, p));
+
+        // Overlay cached updates / creations / deletions
+        cached.forEach((c: any) => {
+          if (c.status === 'hidden' || c.status === 'deleted') {
+            map.delete(c.id);
+          } else {
+            map.set(c.id, {
+              id: c.id,
+              nameEn: c.nameEn || 'Streetwear Product',
+              nameBn: c.nameBn || '',
+              category: c.category || 'fashion',
+              categoryEn: (c.category || 'fashion').toUpperCase(),
+              categoryBn: c.category || 'ফ্যাশন',
+              priceEn: Number(c.priceEn || 0),
+              priceBn: (c.priceEn || 0).toString().replace(/[0-9]/g, (d: string) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]),
+              descriptionEn: c.descriptionEn || '',
+              descriptionBn: c.descriptionBn || '',
+              image: c.image || c.images?.[0] || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
+              sizes: ['S', 'M', 'L', 'XL'],
+              fabricEn: c.fabricEn || '100% Quality Material',
+              fabricBn: c.fabricBn || '১০০% কোয়ালিটি ফ্যাব্রিক',
+              badgeEn: c.cod_available ? 'COD Available' : '',
+              badgeBn: c.cod_available ? 'ক্যাশ অন ডেলিভারি' : '',
+            });
           }
+        });
+
+        const finalProductsList = Array.from(map.values());
+        setProducts(finalProductsList);
+
+        if (finalProductsList.length > 0 && cartItems.length === 0) {
+          setCartItems([
+            { product: finalProductsList[0], size: 'L', quantity: 1 },
+            { product: finalProductsList[1] || finalProductsList[0], size: '32', quantity: 1 },
+          ]);
         }
       } catch (err) {
         console.error('Failed to load dynamic data:', err);
